@@ -2,20 +2,16 @@
 
 namespace Tests\Feature;
 
-// use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ExampleTest extends TestCase
 {
     /**
-     * A basic test example.
-     *
-     * @return void
+     * La raiz ya no sirve la landing de Laravel: ahora es una redireccion
+     * (meta-refresh) al dashboard si hay sesion o al login si no.
      */
-    public function test_the_application_returns_a_successful_response()
+    public function test_the_application_returns_a_successful_response(): void
     {
-        $response = $this->get('/');
-
-        $response->assertStatus(200);
+        $this->get('/')->assertOk();
     }
 }

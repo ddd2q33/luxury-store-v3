@@ -1,0 +1,9 @@
+# Denegar todo acceso directo a uploads/ por HTTP.
+# Los archivos (facturas, recibos, avatares) deben servirse desde PHP tras verificar sesión.
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

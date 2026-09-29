@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Sin conexión — Luxury Store</title>
+    <style>
+        * { font-family: 'Inter', system-ui, -apple-system, sans-serif; box-sizing: border-box; }
+        body {
+            margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(160deg, #0f172a, #1e293b); color: #e2e8f0; padding: 24px; text-align: center;
+        }
+        .card {
+            background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+            border-radius: 24px; padding: 40px 28px; max-width: 360px; width: 100%;
+        }
+        .icon {
+            width: 72px; height: 72px; border-radius: 22px; display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 20px; background: rgba(212,175,55,.15); color: #d4af37; font-size: 30px;
+        }
+        h1 { margin: 0 0 8px; font-size: 20px; font-weight: 800; color: #fff; }
+        p { margin: 0 0 24px; font-size: 14px; line-height: 1.6; color: #94a3b8; }
+        button {
+            width: 100%; padding: 14px; border: 0; border-radius: 14px; font-weight: 700; font-size: 14px;
+            background: linear-gradient(135deg, #d4af37, #b8860b); color: #111827; cursor: pointer;
+        }
+        button:active { transform: scale(.98); }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">⌁</div>
+        <h1>Sin conexión</h1>
+        <p>No se pudo cargar esta pantalla. Revisa tu conexión a internet e inténtalo de nuevo. Tus datos están seguros en el servidor.</p>
+        <button onclick="location.reload()">Reintentar</button>
+    </div>
+</body>
+</html>

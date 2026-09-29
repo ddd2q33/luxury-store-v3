@@ -1,0 +1,530 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Los toasts y los menus de Livewire/Alpine usan x-cloak para no parpadear
+ * antes de que Alpine hidrate. Tailwind no genera esa regla, asi que si no se
+ * declara aqui el toast se ve un instante en cada recarga de pagina.
+ */
+[x-cloak] {
+    display: none !important;
+}
+
+/*
+ * Sidebar con el aspecto de `oldluxury/views/partials/app_nav.php`.
+ *
+ * Estas reglas van FUERA de @layer a proposito. Tailwind genera las utilidades
+ * DESPUES de @layer components/utilities, asi que si estas vivieran en
+ * @layer components, un `bg-white/10` de la vista ganaria por orden de
+ * cascada. Con dos clases (`.panel-nav-tile.activo`, especificidad 0,2,0) gana
+ * nuestra regla. Es el mismo motivo por el que `x-cloak` esta arriba.
+ */
+.panel-nav-tile {
+    transition: transform .2s ease, background-color .2s ease, color .2s ease;
+}
+
+/* En táctil no hay hover: el estado activo es el único que se ve distinto. */
+@media (hover: hover) {
+    .panel-nav-tile:hover {
+        transform: translateY(-2px);
+    }
+}
+
+.panel-nav-tile:active {
+    transform: scale(.94);
+}
+
+/* El activo del legacy: cuadro blanco, icono y texto negros. */
+.panel-nav-tile.activo {
+    background: #fff;
+    color: #000;
+    box-shadow: 0 4px 12px rgba(255, 255, 255, .2);
+    transform: scale(1.05);
+}
+
+@media (hover: hover) {
+    .panel-nav-tile.activo:hover {
+        transform: scale(1.05);
+    }
+}
+
+/* Logotipo: el legacy lo hace crecer despacio al pasar el cursor. */
+.panel-logo {
+    transition: transform .5s ease;
+}
+
+@media (hover: hover) {
+    .panel-logo:hover {
+        transform: scale(1.05);
+    }
+}
+
+/*
+ * Colapso del sidebar de escritorio.
+ *
+ * El legacy (app_nav.php:149-151) lo hace con `transform: translateX(-100%)`
+ * sobre un sidebar `position:fixed` y `margin-left:0` en el main. Se replica
+ * con clases propias en vez de utilidades de Tailwind porque alternar
+ * `lg:ml-0` y `lg:ml-64` con `:class` de Alpine NO es seguro: ambas son
+ * utilidades del mismo eje y gana la que Tailwind imprima ultima en la hoja,
+ * no la que Alpine agregue al final. Con `.is-colapsado` no hay ambiguedad.
+ */
+.panel-sidebar-colapsable {
+    transition: transform .3s ease;
+    will-change: transform;
+}
+
+.panel-sidebar-colapsable.is-colapsado {
+    transform: translateX(-100%);
+}
+
+/*
+ * Modo "app movil" (app_nav.php:64-84, 111-123).
+ *
+ * OJO: el legacy NO usa breakpoints de Tailwind para decidir esto. Pone
+ * `html.luxury-is-mobile` con JS y lo define como:
+ *   compacto = min(screen.width, screen.height) <= 1024
+ *   tactil   = matchMedia('(pointer:coarse) and (hover:none)')
+ *   movil    = (innerWidth <= 1024) || (tactil && compacto)
+ * Es decir: una ventana angosta en un ESCRITORIO se queda en layout de
+ * escritorio con el menu fijo, y solo un telefono/tableta real pasa a drawer.
+ * Con `lg:` a secas se cambiaria de layout por el ancho de la ventana, que no
+ * es lo mismo. Por eso el markup lleva `hidden lg:block` SOLO como red de
+ * seguridad: quien manda es la clase.
+ */
+.panel-drawer {
+    transition: transform .3s ease;
+    will-change: transform;
+    transform: translateX(-100%);
+    /* El drawer arranca debajo de la barra movil, no de la pantalla. */
+    top: calc(52px + env(safe-area-inset-top));
+    height: calc(100vh - 52px - env(safe-area-inset-top));
+}
+
+.panel-drawer.is-abierto {
+    transform: translateX(0);
+    box-shadow: 0 0 60px rgba(0, 0, 0, .55);
+}
+
+.panel-backdrop {
+    transition: opacity .25s ease, visibility .25s ease;
+    opacity: 0;
+    visibility: hidden;
+    inset: calc(52px + env(safe-area-inset-top)) 0 0 0;
+}
+
+.panel-backdrop.is-abierto {
+    opacity: 1;
+    visibility: visible;
+}
+
+body.panel-menu-abierto {
+    overflow: hidden;
+}
+
+.panel-main {
+    transition: margin-left .3s ease;
+}
+
+@media (min-width: 1024px) {
+    .panel-main {
+        margin-left: 16rem;
+    }
+
+    .panel-main.is-colapsado {
+        margin-left: 0;
+    }
+}
+
+/* El legacy lo aplica en todo el documento (app_nav.php:98). */
+a,
+button {
+    -webkit-tap-highlight-color: transparent;
+}
+
+/*
+ * Scrollbar fina para la columna de módulos. La clase venía en el markup
+ * (heredada de app_nav.php:160) pero sus reglas nunca se migraron, así que
+ * hasta ahora no hacía nada. Copiadas de app_nav.php:94-97.
+ */
+.luxury-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.luxury-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+
+.luxury-scroll::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, .1);
+}
+
+.luxury-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, .12);
+    border-radius: 10px;
+}
+
+/*
+ * Tema oscuro global (app_nav.php:124-143, 69-70).
+ *
+ * El legacy lo resuelve pisando por SELECTOR las clases de Tailwind que ya
+ * usan las vistas, con `!important` por todos lados. No es un tema "de
+ * verdad" (no hay tokens de color): es una capa que se superpone. Se replica
+ * tal cual y con el mismo alcance: `.panel-main`, que incluye la barra movil y
+ * las vistas, y EXCLuye el sidebar/drawer (esos ya son negros fijos).
+ *
+ * Si alguna vista nueva usa clases que no estan en esta lista, se vera clara
+ * en modo oscuro. La alternativa seria `darkMode: 'class'` de Tailwind, que es
+ * un trabajo aparte.
+ */
+html.dark body {
+    background: #0a0f1e;
+}
+
+html.dark .panel-main {
+    background: #0a0f1e;
+    color: #e6ebf4;
+}
+
+html.dark .panel-main .bg-white {
+    background: #111a2e !important;
+}
+
+html.dark .panel-main .bg-gray-50 {
+    background: #0e1626 !important;
+}
+
+html.dark .panel-main .bg-gray-100 {
+    background: #0e1626 !important;
+}
+
+html.dark .panel-main .bg-gray-200 {
+    background: #1e2a44 !important;
+}
+
+html.dark .panel-main .text-gray-900,
+html.dark .panel-main .text-gray-800,
+html.dark .panel-main .text-gray-700 {
+    color: #e6ebf4 !important;
+}
+
+html.dark .panel-main .text-gray-600,
+html.dark .panel-main .text-gray-500 {
+    color: #8fa1bd !important;
+}
+
+html.dark .panel-main .text-gray-400 {
+    color: #64748b !important;
+}
+
+html.dark .panel-main .border-gray-100,
+html.dark .panel-main .border-gray-200,
+html.dark .panel-main .border-gray-300 {
+    border-color: #1e2a44 !important;
+}
+
+html.dark .panel-main input,
+html.dark .panel-main select,
+html.dark .panel-main textarea {
+    background: #0e1626;
+    color: #e6ebf4;
+    border-color: #1e2a44;
+}
+
+html.dark .panel-main table {
+    color: #e6ebf4;
+}
+
+html.dark .panel-main thead {
+    background: #0e1626 !important;
+    color: #8fa1bd !important;
+}
+
+html.dark .panel-main tbody tr:hover {
+    background: #0e1626 !important;
+}
+
+/*
+ * Superficies con tinte de color en modo oscuro.
+ *
+ * La regla anterior (`.bg-green-100 / .bg-red-100 / .bg-yellow-100 /
+ * .bg-blue-100`) no aplicaba a NADA: las vistas nunca usan verde/rojo/amarillo/
+ * azul de Tailwind, usan `emerald`, `rose`, `amber`, `indigo`, `sky`, `slate` y
+ * `violet`. Por eso los chips, los mosaicos de los KPIs y los banners de alerta
+ * del dashboard se veian clarisimos en modo oscuro.
+ *
+ * Aqui cada tinte se conserva como translucido del MISMO color (para no perder
+ * el codigo visual: emerald = va bien, amber = atencion, rose = problema) y el
+ * texto oscuro que venia con el (text-*-700/800) se aclara para que se lea
+ * sobre ese fondo. Si se neutralizaran a gris, el texto dejaria de contrastar.
+ *
+ * Sigue siendo una capa por selector, no tokens de color. Si una vista nueva
+ * usa un color que no esta en esta lista, se vera clara en modo oscuro.
+ */
+html.dark .panel-main .bg-emerald-50 {
+    background: rgba(16, 185, 129, .12) !important;
+}
+
+html.dark .panel-main .bg-emerald-100 {
+    background: rgba(16, 185, 129, .2) !important;
+}
+
+html.dark .panel-main .bg-indigo-50 {
+    background: rgba(99, 102, 241, .14) !important;
+}
+
+html.dark .panel-main .bg-indigo-100 {
+    background: rgba(99, 102, 241, .22) !important;
+}
+
+html.dark .panel-main .bg-rose-50 {
+    background: rgba(244, 63, 94, .13) !important;
+}
+
+html.dark .panel-main .bg-rose-100 {
+    background: rgba(244, 63, 94, .22) !important;
+}
+
+html.dark .panel-main .bg-amber-50 {
+    background: rgba(245, 158, 11, .13) !important;
+}
+
+html.dark .panel-main .bg-amber-100 {
+    background: rgba(245, 158, 11, .22) !important;
+}
+
+html.dark .panel-main .bg-sky-50 {
+    background: rgba(14, 165, 233, .13) !important;
+}
+
+html.dark .panel-main .bg-sky-100 {
+    background: rgba(14, 165, 233, .22) !important;
+}
+
+html.dark .panel-main .bg-slate-100 {
+    background: rgba(148, 163, 184, .16) !important;
+}
+
+html.dark .panel-main .bg-violet-50 {
+    background: rgba(139, 92, 246, .13) !important;
+}
+
+/* Texto de color: se aclara el mismo tono para contrastar con el fondo oscuro. */
+html.dark .panel-main .text-emerald-500,
+html.dark .panel-main .text-emerald-600 {
+    color: #34d399 !important;
+}
+
+html.dark .panel-main .text-emerald-700,
+html.dark .panel-main .text-emerald-800,
+html.dark .panel-main .text-emerald-900 {
+    color: #6ee7b7 !important;
+}
+
+html.dark .panel-main .text-indigo-500,
+html.dark .panel-main .text-indigo-600 {
+    color: #a5b4fc !important;
+}
+
+html.dark .panel-main .text-indigo-700,
+html.dark .panel-main .text-indigo-800,
+html.dark .panel-main .text-indigo-900 {
+    color: #c7d2fe !important;
+}
+
+html.dark .panel-main .text-rose-500,
+html.dark .panel-main .text-rose-600 {
+    color: #fb7185 !important;
+}
+
+html.dark .panel-main .text-rose-700,
+html.dark .panel-main .text-rose-800,
+html.dark .panel-main .text-rose-900 {
+    color: #fda4af !important;
+}
+
+html.dark .panel-main .text-amber-500,
+html.dark .panel-main .text-amber-600 {
+    color: #fcd34d !important;
+}
+
+html.dark .panel-main .text-amber-700,
+html.dark .panel-main .text-amber-800,
+html.dark .panel-main .text-amber-900 {
+    color: #fde68a !important;
+}
+
+html.dark .panel-main .text-sky-500 {
+    color: #38bdf8 !important;
+}
+
+html.dark .panel-main .text-sky-700,
+html.dark .panel-main .text-sky-800 {
+    color: #7dd3fc !important;
+}
+
+html.dark .panel-main .text-slate-600 {
+    color: #94a3b8 !important;
+}
+
+html.dark .panel-main .text-slate-700,
+html.dark .panel-main .text-slate-300 {
+    color: #cbd5e1 !important;
+}
+
+html.dark .panel-main .text-violet-700 {
+    color: #c4b5fd !important;
+}
+
+html.dark .panel-main .text-green-600 {
+    color: #4ade80 !important;
+}
+
+html.dark .panel-main .text-red-600 {
+    color: #f87171 !important;
+}
+
+/* Bordes con tinte. */
+html.dark .panel-main .border-emerald-200,
+html.dark .panel-main .border-emerald-500 {
+    border-color: rgba(16, 185, 129, .35) !important;
+}
+
+html.dark .panel-main .border-indigo-200 {
+    border-color: rgba(99, 102, 241, .38) !important;
+}
+
+html.dark .panel-main .border-rose-200,
+html.dark .panel-main .border-rose-500 {
+    border-color: rgba(244, 63, 94, .35) !important;
+}
+
+html.dark .panel-main .border-amber-100,
+html.dark .panel-main .border-amber-200,
+html.dark .panel-main .border-amber-300 {
+    border-color: rgba(245, 158, 11, .35) !important;
+}
+
+html.dark .panel-main .border-sky-200 {
+    border-color: rgba(14, 165, 233, .35) !important;
+}
+
+html.dark .panel-main .border-gray-50,
+html.dark .panel-main .border-gray-400 {
+    border-color: #1e2a44 !important;
+}
+
+/* Estados hover/focus/active: en claro son "un poco mas oscuro el gris"; en
+   oscuro tienen que subir de luz, no bajar. */
+html.dark .panel-main .hover\:bg-gray-50:hover,
+html.dark .panel-main .focus\:bg-gray-50:focus {
+    background: #16203a !important;
+}
+
+html.dark .panel-main .hover\:bg-gray-100:hover,
+html.dark .panel-main .active\:bg-gray-100:active,
+html.dark .panel-main .focus\:bg-gray-100:focus {
+    background: #1b2740 !important;
+}
+
+html.dark .panel-main .hover\:bg-gray-200:hover {
+    background: #1e2a44 !important;
+}
+
+html.dark .panel-main .hover\:border-gray-300:hover,
+html.dark .panel-main .focus\:border-gray-300:focus {
+    border-color: #2b3a5c !important;
+}
+
+html.dark .panel-main .hover\:text-gray-700:hover,
+html.dark .panel-main .focus\:text-gray-700:focus,
+html.dark .panel-main .hover\:text-gray-800:hover,
+html.dark .panel-main .focus\:text-gray-800:focus,
+html.dark .panel-main .hover\:text-gray-500:hover,
+html.dark .panel-main .active\:text-gray-500:active,
+html.dark .panel-main .active\:text-gray-700:active {
+    color: #e6ebf4 !important;
+}
+
+html.dark .panel-main .hover\:bg-indigo-50:hover {
+    background: rgba(99, 102, 241, .2) !important;
+}
+
+html.dark .panel-main .hover\:bg-indigo-100:hover,
+html.dark .panel-main .focus\:bg-indigo-100:focus {
+    background: rgba(99, 102, 241, .3) !important;
+}
+
+html.dark .panel-main .hover\:bg-emerald-50:hover {
+    background: rgba(16, 185, 129, .2) !important;
+}
+
+html.dark .panel-main .hover\:bg-rose-50:hover {
+    background: rgba(244, 63, 94, .2) !important;
+}
+
+html.dark .panel-main .hover\:bg-amber-100:hover {
+    background: rgba(245, 158, 11, .3) !important;
+}
+
+html.dark .panel-main .hover\:text-emerald-700:hover {
+    color: #a7f3d0 !important;
+}
+
+html.dark .panel-main .hover\:text-rose-700:hover {
+    color: #fecdd3 !important;
+}
+
+html.dark .panel-main .hover\:text-indigo-700:hover,
+html.dark .panel-main .hover\:text-indigo-600:hover {
+    color: #e0e7ff !important;
+}
+
+html.dark .panel-main .hover\:text-amber-700:hover {
+    color: #fef3c7 !important;
+}
+
+html.dark .panel-main .active\:bg-slate-100:active {
+    background: rgba(148, 163, 184, .26) !important;
+}
+
+html.dark .panel-main .active\:bg-rose-100:active {
+    background: rgba(244, 63, 94, .3) !important;
+}
+
+/* `divide-y divide-gray-100`: la cola de pedidos y los top clientes usan
+   separadores que en claro son casi blancos. */
+html.dark .panel-main .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #16203a !important;
+}
+
+/* Los badges oscuros (bg-gray-800/900, bg-*-600) ya son oscuros: sus bordes
+   claros se atenuan para que no destellen. */
+html.dark .panel-main .border-gray-700,
+html.dark .panel-main .border-gray-800 {
+    border-color: #2b3a5c !important;
+}
+
+html.dark .panel-main .bg-gray-300 {
+    background: #2b3a5c !important;
+}
+
+html.dark .panel-mobilebar {
+    background: rgba(10, 15, 30, .92);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .06);
+}
+
+html.dark .panel-mobilebar-btn {
+    color: #94a3b8;
+}
+
+html.dark .panel-mobilebar-btn:active {
+    background: rgba(255, 255, 255, .08);
+}
+
+html.dark .panel-mobilebar-avatar {
+    border-color: #111a2e;
+    box-shadow: 0 0 0 1px #1e2a44;
+}

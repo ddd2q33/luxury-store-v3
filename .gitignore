@@ -1,8 +1,11 @@
 /node_modules
+/luxury.sql
 /public/build
 /public/hot
 /public/storage
 /storage/*.key
+# Copia del schema para luxury_test (datos reales: NUNCA al repo).
+/storage/testschema/
 /vendor
 .env
 .env.backup

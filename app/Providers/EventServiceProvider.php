@@ -16,7 +16,8 @@ class EventServiceProvider extends ServiceProvider
      */
     protected $listen = [
         Registered::class => [
-            SendEmailVerificationNotification::class,
+            // Sin verificación de email: la tabla legacy `usuarios` no tiene
+            // `email_verified_at` y el flujo no aplica al back-office.
         ],
     ];
 

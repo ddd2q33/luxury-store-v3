@@ -1,0 +1,28 @@
+# Los avatares son imágenes públicas de perfil: se permite solo su tipo.
+# Las facturas y recibos (uploads/facturas, uploads/recibos) siguen bloqueados por ../.htaccess.
+<IfModule mod_authz_core.c>
+    Require all granted
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Allow from all
+</IfModule>
+
+# Solo archivos de imagen; cualquier otro tipo se rechaza
+<FilesMatch "\.(?i:jpe?g|png|gif|webp)$">
+    <IfModule mod_authz_core.c>
+        Require all granted
+    </IfModule>
+</FilesMatch>
+<FilesMatch "\.(?i:pdf|php|phtml|phar|html?|js|exe|sh|bat)$">
+    <IfModule mod_authz_core.c>
+        Require all denied
+    </IfModule>
+    <IfModule !mod_authz_core.c>
+        Order allow,deny
+        Deny from all
+    </IfModule>
+</FilesMatch>
+
+# Nunca ejecutar scripts aquí
+php_flag engine off

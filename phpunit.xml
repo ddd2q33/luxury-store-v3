@@ -21,11 +21,29 @@
         <env name="APP_ENV" value="testing"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="CACHE_DRIVER" value="array"/>
-        <!-- <env name="DB_CONNECTION" value="sqlite"/> -->
-        <!-- <env name="DB_DATABASE" value=":memory:"/> -->
         <env name="MAIL_MAILER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+
+        <!--
+            RED DE SEGURIDAD OBLIGATORIA. NO QUITAR NI REVERTIR.
+
+            La base conectada NO es `luxury` (la de produccion). Desde 2026-09-29
+            `luxury_test` es una COPIA COMPLETA del schema legacy (26 tablas,
+            generada desde luxury.sql), asi que la suite ya no necesita
+            RefreshDatabase: los tests usan DatabaseTransactions y al terminar
+            todo vuelve a su sitio. Nada de `migrate:fresh` contra produccion.
+
+            Si `luxury_test` llegara a borrarse, se recrea en dos pasos:
+                1) mysql -u root < storage/testschema/luxury_test.sql
+                   (el archivo tiene USE `luxury_test`, jamas toca `luxury`)
+                2) ALTER TABLE luxury_test.productos ADD COLUMN imagen MEDIUMBLOB NULL;
+                   (la columna la agrego el proyecto despues del dump)
+
+            Si alguien cambia este valor, que sepa lo que esta tocando.
+        -->
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_DATABASE" value="luxury_test"/>
     </php>
 </phpunit>
