@@ -57,7 +57,8 @@
                 </div>
                 @if ($caja)
                     <button type="button" wire:click="confirmarCerrar"
-                            class="rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 px-4 py-2.5 text-sm font-semibold hover:bg-rose-500/25 transition-colors min-h-[44px]">
+                            class="inline-flex items-center gap-2 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-300 px-4 py-2.5 text-sm font-semibold hover:bg-rose-500/25 transition-colors min-h-[44px]">
+                        <x-heroicon name="power" class="w-4 h-4" />
                         Cerrar turno
                     </button>
                 @endif
@@ -151,8 +152,8 @@
                                 </label>
                                 @if (count($carrito) > 0 && ! $ventaManual)
                                     <button type="button" wire:click="limpiarCarrito" wire:loading.attr="disabled"
-                                            class="text-xs font-semibold text-rose-600 hover:text-rose-700">
-                                        Vaciar
+                                            class="inline-flex items-center gap-1 text-xs font-semibold text-rose-600 hover:text-rose-700">
+                                        <x-heroicon name="trash" class="w-3.5 h-3.5" /> Vaciar
                                     </button>
                                 @endif
                             </div>
@@ -208,7 +209,9 @@
                                             {{ \App\Support\Money::format($item['cantidad'] * $item['precio']) }}
                                         </span>
                                         <button type="button" wire:click="quitarProducto({{ $i }})" aria-label="Quitar"
-                                                class="w-9 h-9 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600 active:scale-95 transition shrink-0 font-bold">✕</button>
+                                                class="w-9 h-9 rounded-lg text-rose-400 hover:bg-rose-50 hover:text-rose-600 active:scale-95 transition shrink-0 flex items-center justify-center">
+                                            <x-heroicon name="x-mark" class="w-4 h-4" />
+                                        </button>
                                     </li>
                                 @endforeach
                             </ul>
@@ -294,10 +297,11 @@
 
                         <button type="button" wire:click="registrarVenta" wire:loading.attr="disabled" wire:target="registrarVenta"
                                 @class([
-                                    'w-full rounded-2xl py-4 font-bold text-white transition-all min-h-[52px] shadow-lg',
+                                    'inline-flex items-center justify-center gap-2 w-full rounded-2xl py-4 font-bold text-white transition-all min-h-[52px] shadow-lg',
                                     'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] shadow-emerald-600/25' => $puedeCobrar,
                                     'bg-gray-300 cursor-not-allowed' => ! $puedeCobrar,
                                 ])>
+                            <x-heroicon name="shopping-cart" class="w-5 h-5" wire:loading.remove wire:target="registrarVenta" />
                             <span wire:loading.remove wire:target="registrarVenta">
                                 Cobrar {{ \App\Support\Money::format($subtotal) }}
                             </span>
@@ -315,10 +319,11 @@
                 </div>
                 <button type="button" wire:click="registrarVenta" wire:loading.attr="disabled" wire:target="registrarVenta"
                         @class([
-                            'flex-1 rounded-xl py-3 font-bold text-white min-h-[48px] transition-colors',
+                            'inline-flex items-center justify-center gap-2 flex-1 rounded-xl py-3 font-bold text-white min-h-[48px] transition-colors',
                             'bg-emerald-600 active:bg-emerald-700' => $puedeCobrar,
                             'bg-gray-300 cursor-not-allowed' => ! $puedeCobrar,
                         ])>
+                    <x-heroicon name="shopping-cart" class="w-4 h-4" />
                     {{ $puedeCobrar ? 'Cobrar' : 'Carrito vacío' }}
                 </button>
             </div>
@@ -330,8 +335,9 @@
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                     <h3 class="font-bold text-gray-900">Movimientos del turno</h3>
                     <button type="button" wire:click="$set('showMovimiento', true)"
-                            class="rounded-xl bg-gray-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-gray-800 min-h-[44px] active:scale-[0.98] transition">
-                        + Nuevo movimiento
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 text-white px-4 py-2.5 text-sm font-semibold hover:bg-gray-800 min-h-[44px] active:scale-[0.98] transition">
+                        <x-heroicon name="plus" class="w-4 h-4" />
+                        Nuevo movimiento
                     </button>
                 </div>
 
@@ -429,9 +435,15 @@
                                     <td class="py-3 pr-4"><span class="text-xs rounded-full bg-gray-100 px-2 py-0.5 text-gray-600">{{ $venta->metodo_pago }}</span></td>
                                     <td class="py-3 pr-4 text-right font-bold text-gray-900 tabular-nums">{{ \App\Support\Money::format($venta->total) }}</td>
                                     <td class="py-3 text-right whitespace-nowrap">
-                                        <button type="button" wire:click="verVenta({{ $venta->id }})" class="text-indigo-600 hover:text-indigo-700 text-sm font-semibold">Ver</button>
+                                        <button type="button" wire:click="verVenta({{ $venta->id }})"
+                                                class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold">
+                                            <x-heroicon name="eye" class="w-4 h-4" /> Ver
+                                        </button>
                                         <span class="text-gray-200 mx-1.5">·</span>
-                                        <button type="button" wire:click="pedirEliminarVenta({{ $venta->id }})" class="text-rose-600 hover:text-rose-700 text-sm font-semibold">Anular</button>
+                                        <button type="button" wire:click="pedirEliminarVenta({{ $venta->id }})"
+                                                class="inline-flex items-center gap-1 text-rose-600 hover:text-rose-700 text-sm font-semibold">
+                                            <x-heroicon name="archive-box-x-mark" class="w-4 h-4" /> Anular
+                                        </button>
                                     </td>
                                 </tr>
                             @empty
@@ -453,8 +465,12 @@
                                 <span class="tabular-nums">{{ $venta->fecha_venta->format('d/m H:i') }}</span>
                             </div>
                             <div class="mt-2.5 flex gap-2">
-                                <button type="button" wire:click="verVenta({{ $venta->id }})" class="flex-1 rounded-lg bg-gray-100 py-2.5 text-sm font-semibold text-gray-700 min-h-[44px] active:scale-[0.98] transition">Ver</button>
-                                <button type="button" wire:click="pedirEliminarVenta({{ $venta->id }})" class="flex-1 rounded-lg bg-rose-50 py-2.5 text-sm font-semibold text-rose-600 min-h-[44px] active:scale-[0.98] transition">Anular</button>
+                                <button type="button" wire:click="verVenta({{ $venta->id }})" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-100 py-2.5 text-sm font-semibold text-gray-700 min-h-[44px] active:scale-[0.98] transition">
+                                    <x-heroicon name="eye" class="w-4 h-4" /> Ver
+                                </button>
+                                <button type="button" wire:click="pedirEliminarVenta({{ $venta->id }})" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-50 py-2.5 text-sm font-semibold text-rose-600 min-h-[44px] active:scale-[0.98] transition">
+                                    <x-heroicon name="archive-box-x-mark" class="w-4 h-4" /> Anular
+                                </button>
                             </div>
                         </div>
                     @empty
@@ -488,7 +504,8 @@
                     @endforeach
                 </div>
                 <button type="button" wire:click="abrirCaja" wire:loading.attr="disabled" wire:target="abrirCaja"
-                        class="mt-4 w-full rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 min-h-[52px] shadow-lg shadow-emerald-600/25 active:scale-[0.99] transition">
+                        class="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 min-h-[52px] shadow-lg shadow-emerald-600/25 active:scale-[0.99] transition">
+                    <x-heroicon name="power" class="w-5 h-5" wire:loading.remove wire:target="abrirCaja" />
                     <span wire:loading.remove wire:target="abrirCaja">Abrir caja</span>
                     <span wire:loading wire:target="abrirCaja">Abriendo…</span>
                 </button>
@@ -507,7 +524,8 @@
                     </div>
                 </div>
                 <button type="button" wire:click="reabrirCaja"
-                        class="mt-4 w-full rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 font-semibold py-3.5 min-h-[52px] hover:bg-amber-100 active:scale-[0.99] transition">
+                        class="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 font-semibold py-3.5 min-h-[52px] hover:bg-amber-100 active:scale-[0.99] transition">
+                    <x-heroicon name="arrow-path" class="w-5 h-5" />
                     Reabrir última caja cerrada
                 </button>
             </div>
@@ -530,8 +548,12 @@
                     <div class="flex justify-between border-t border-gray-200 pt-2.5 mt-2.5"><span class="font-bold text-gray-900">Saldo esperado</span><span class="font-bold text-xl tabular-nums">{{ \App\Support\Money::format($totalesCierre['saldo']) }}</span></div>
                 </div>
                 <div class="mt-5 grid grid-cols-2 gap-3">
-                    <button type="button" wire:click="$set('showCerrar', false)" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">Cancelar</button>
-                    <button type="button" wire:click="cerrarCaja" class="rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px] active:scale-[0.98] transition">Cerrar turno</button>
+                    <button type="button" wire:click="$set('showCerrar', false)" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                    </button>
+                    <button type="button" wire:click="cerrarCaja" class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px] active:scale-[0.98] transition">
+                        <x-heroicon name="power" class="w-4 h-4" /> Cerrar turno
+                    </button>
                 </div>
             </div>
         </div>
@@ -578,8 +600,12 @@
                     </div>
                 </div>
                 <div class="mt-5 grid grid-cols-2 gap-3">
-                    <button type="button" wire:click="$set('showMovimiento', false)" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cancelar</button>
-                    <button type="button" wire:click="registrarMovimiento" class="rounded-xl bg-gray-900 py-3 font-bold text-white min-h-[48px]">Registrar</button>
+                    <button type="button" wire:click="$set('showMovimiento', false)" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                    </button>
+                    <button type="button" wire:click="registrarMovimiento" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 py-3 font-bold text-white min-h-[48px]">
+                        <x-heroicon name="check-circle" class="w-4 h-4" /> Registrar
+                    </button>
                 </div>
             </div>
         </div>
@@ -605,8 +631,8 @@
                     <input type="tel" wire:model="nuevoClienteTelefono" placeholder="Teléfono (opcional)" inputmode="tel"
                            class="w-full rounded-xl border-gray-200 mb-3" autocomplete="off">
                     <button type="button" wire:click="crearCliente"
-                            class="w-full rounded-xl bg-indigo-600 text-white py-3 font-bold hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
-                        Crear y usar
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white py-3 font-bold hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
+                        <x-heroicon name="plus" class="w-4 h-4" /> Crear y usar
                     </button>
                 </div>
             </div>
@@ -633,8 +659,8 @@
                         @endif
                     </div>
                     <button type="button" wire:click="closeTicket"
-                            class="mt-5 w-full rounded-2xl bg-gray-900 text-white py-3.5 font-bold min-h-[52px] active:scale-[0.99] transition">
-                        Nueva venta
+                            class="mt-5 w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-gray-900 text-white py-3.5 font-bold min-h-[52px] active:scale-[0.99] transition">
+                        <x-heroicon name="plus" class="w-5 h-5" /> Nueva venta
                     </button>
                 </div>
             </div>
@@ -678,8 +704,12 @@
                     </div>
                 </div>
                 <div class="p-6 pt-4 grid grid-cols-2 gap-3 border-t border-gray-100">
-                    <button type="button" wire:click="closeDetalle" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cerrar</button>
-                    <button type="button" wire:click="pedirEliminarVenta({{ $ventaDetalle['id'] }})" class="rounded-xl bg-rose-50 border border-rose-200 py-3 font-semibold text-rose-700 min-h-[48px]">Anular venta</button>
+                    <button type="button" wire:click="closeDetalle" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cerrar
+                    </button>
+                    <button type="button" wire:click="pedirEliminarVenta({{ $ventaDetalle['id'] }})" class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 border border-rose-200 py-3 font-semibold text-rose-700 min-h-[48px]">
+                        <x-heroicon name="archive-box-x-mark" class="w-4 h-4" /> Anular venta
+                    </button>
                 </div>
             </div>
         </div>
@@ -699,8 +729,12 @@
                 </div>
                 <p class="mt-3 text-sm text-gray-600 leading-relaxed">Se eliminará la venta, su movimiento en caja y <strong>el stock será repuesto</strong>. Esta acción no se puede deshacer.</p>
                 <div class="mt-5 grid grid-cols-2 gap-3">
-                    <button type="button" wire:click="$set('showEliminar', false)" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cancelar</button>
-                    <button type="button" wire:click="eliminarVentaConfirmada" class="rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px]">Anular</button>
+                    <button type="button" wire:click="$set('showEliminar', false)" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                    </button>
+                    <button type="button" wire:click="eliminarVentaConfirmada" class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px]">
+                        <x-heroicon name="archive-box-x-mark" class="w-4 h-4" /> Anular
+                    </button>
                 </div>
             </div>
         </div>

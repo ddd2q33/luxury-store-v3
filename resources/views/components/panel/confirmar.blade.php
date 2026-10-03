@@ -3,6 +3,7 @@
     'descripcion',
     'confirmar',
     'textoConfirmar' => 'Eliminar',
+    'iconoConfirmar' => 'trash',
     'wire' => null,
 ])
 
@@ -29,12 +30,14 @@
         <div class="mt-5 grid grid-cols-2 gap-3">
             <button type="button"
                     wire:click="{{ $wire ? '$set('.chr(39).$wire.chr(39).', null)' : '' }}"
-                    class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                <x-heroicon name="x-mark" class="w-4 h-4" />
                 Cancelar
             </button>
             <button type="button" wire:click="{{ $confirmar }}"
                     wire:loading.attr="disabled" wire:target="{{ $confirmar }}"
-                    class="rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px] active:scale-[0.98] transition">
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px] active:scale-[0.98] transition">
+                <x-heroicon :name="$iconoConfirmar" class="w-4 h-4" />
                 {{ $textoConfirmar }}
             </button>
         </div>

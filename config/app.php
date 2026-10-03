@@ -67,9 +67,20 @@ return [
     | will be used by the PHP date and date-time functions. We have gone
     | ahead and set this to a sensible default for you out of the box.
     |
+    | OJO: NO es UTC. La tienda opera en Colombia y los datos que ya hay en la
+    | base los escribio el legacy con `date_default_timezone_set('America/Bogota')`
+    | (oldluxury/config.php:3). Con `UTC` aqui, `now()` devuelve 5 horas menos
+    | de la hora real de Colombia y los "ventas de hoy" del Dashboard cuentan
+    | mal. Dejarla en `America/Bogota` hace que PHP, Carbon y MySQL coincidan.
+    |
+    | El `php.ini` de XAMPP tiene `date.timezone = Europe/Berlin`, pero Laravel
+    | lo pisa con este valor al arrancar (config/app.php -> `date_default_
+    | timezone_set`), asi que no hace falta tocar el php.ini. Los scripts sueltos
+    | que NO pasan por Laravel (por ejemplo un `php -r` suelto) si usarian Berlin.
+    |
     */
 
-    'timezone' => 'UTC',
+    'timezone' => 'America/Bogota',
 
     /*
     |--------------------------------------------------------------------------
@@ -80,9 +91,19 @@ return [
     | by the translation service provider. You are free to set this value
     | to any of the locales which will be supported by the application.
     |
+    | OJO: es `es` porque TODO el panel esta en espanol. No es solo para los
+    | textos de Laravel: `Caja` muestra la fecha del dia con
+    | `now()->isoFormat('dddd D [de] MMMM')`, que usa el locale de Carbon. Con
+    | `en` salia "Friday 2 de October" en la barra de caja.
+    |
+    | Los ARCHIVOS de idioma siguen siendo los de Laravel (`lang/es` trae
+    | traducciones genericas; los textos del panel estan escritos a mano en las
+    | vistas, no passes por aqui). Para cambiar el idioma de las fechas de otra
+    | forma, usar `App::setLocale()` en AppServiceProvider::boot().
+    |
     */
 
-    'locale' => 'en',
+    'locale' => 'es',
 
     /*
     |--------------------------------------------------------------------------

@@ -24,8 +24,9 @@
             <p class="text-sm text-gray-500 mt-0.5">{{ $stats['total'] }} registrados · {{ $stats['nuevosMes'] }} nuevos este mes</p>
         </div>
         <button type="button" wire:click="nuevo"
-                class="rounded-xl bg-indigo-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-indigo-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-indigo-600/20">
-            + Nuevo cliente
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-indigo-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-indigo-600/20">
+            <x-heroicon name="plus" class="w-5 h-5" />
+            Nuevo cliente
         </button>
     </div>
 
@@ -96,11 +97,20 @@
                                 @endif
                             </td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">
-                                <button type="button" wire:click="verDetalle({{ $cliente->id }})" class="text-indigo-600 hover:text-indigo-700 text-sm font-semibold">Ver</button>
+                                <button type="button" wire:click="verDetalle({{ $cliente->id }})"
+                                        class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold">
+                                    <x-heroicon name="eye" class="w-4 h-4" /> Ver
+                                </button>
                                 <span class="text-gray-200 mx-1">·</span>
-                                <button type="button" wire:click="editar({{ $cliente->id }})" class="text-gray-600 hover:text-gray-800 text-sm font-semibold">Editar</button>
+                                <button type="button" wire:click="editar({{ $cliente->id }})"
+                                        class="inline-flex items-center gap-1 text-gray-600 hover:text-gray-800 text-sm font-semibold">
+                                    <x-heroicon name="pencil-square" class="w-4 h-4" /> Editar
+                                </button>
                                 <span class="text-gray-200 mx-1">·</span>
-                                <button type="button" wire:click="pedirEliminar({{ $cliente->id }})" class="text-rose-600 hover:text-rose-700 text-sm font-semibold">Eliminar</button>
+                                <button type="button" wire:click="pedirEliminar({{ $cliente->id }})"
+                                        class="inline-flex items-center gap-1 text-rose-600 hover:text-rose-700 text-sm font-semibold">
+                                    <x-heroicon name="trash" class="w-4 h-4" /> Eliminar
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -126,9 +136,15 @@
                         </div>
                     </div>
                     <div class="mt-3 grid grid-cols-3 gap-2">
-                        <button type="button" wire:click="verDetalle({{ $cliente->id }})" class="rounded-lg bg-gray-100 py-2.5 text-xs font-bold text-gray-700 min-h-[42px] active:scale-[0.98] transition">Ver</button>
-                        <button type="button" wire:click="editar({{ $cliente->id }})" class="rounded-lg bg-indigo-50 py-2.5 text-xs font-bold text-indigo-700 min-h-[42px] active:scale-[0.98] transition">Editar</button>
-                        <button type="button" wire:click="pedirEliminar({{ $cliente->id }})" class="rounded-lg bg-rose-50 py-2.5 text-xs font-bold text-rose-600 min-h-[42px] active:scale-[0.98] transition">Eliminar</button>
+                        <button type="button" wire:click="verDetalle({{ $cliente->id }})" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-100 py-2.5 text-xs font-bold text-gray-700 min-h-[42px] active:scale-[0.98] transition">
+                            <x-heroicon name="eye" class="w-4 h-4" /> Ver
+                        </button>
+                        <button type="button" wire:click="editar({{ $cliente->id }})" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-50 py-2.5 text-xs font-bold text-indigo-700 min-h-[42px] active:scale-[0.98] transition">
+                            <x-heroicon name="pencil-square" class="w-4 h-4" /> Editar
+                        </button>
+                        <button type="button" wire:click="pedirEliminar({{ $cliente->id }})" class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-50 py-2.5 text-xs font-bold text-rose-600 min-h-[42px] active:scale-[0.98] transition">
+                            <x-heroicon name="trash" class="w-4 h-4" /> Eliminar
+                        </button>
                     </div>
                 </div>
             @empty
@@ -180,10 +196,14 @@
                         <textarea wire:model="notas" rows="2" class="w-full rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500" placeholder="Preferencias, tallas, observaciones…"></textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-3 pt-2 pb-6">
-                        <button type="button" wire:click="closeForm" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cancelar</button>
+                        <button type="button" wire:click="closeForm" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                            <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                        </button>
                         <button type="submit" wire:loading.attr="disabled" wire:target="guardar"
-                                class="rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px]">
-                            {{ $editandoId ? 'Guardar cambios' : 'Crear cliente' }}
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px]">
+                            <x-heroicon name="check-circle" class="w-5 h-5" wire:loading.remove wire:target="guardar" />
+                            <span wire:loading.remove wire:target="guardar">{{ $editandoId ? 'Guardar cambios' : 'Crear cliente' }}</span>
+                            <span wire:loading wire:target="guardar">Guardando…</span>
                         </button>
                     </div>
                 </form>
@@ -264,8 +284,12 @@
                     </div>
                 </div>
                 <div class="p-6 pt-4 grid grid-cols-2 gap-3 border-t border-gray-100">
-                    <button type="button" wire:click="editar({{ $clienteDetalle['id'] }})" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Editar</button>
-                    <button type="button" wire:click="closeDetalle" class="rounded-xl bg-gray-900 py-3 font-bold text-white min-h-[48px]">Cerrar</button>
+                    <button type="button" wire:click="editar({{ $clienteDetalle['id'] }})" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="pencil-square" class="w-4 h-4" /> Editar
+                    </button>
+                    <button type="button" wire:click="closeDetalle" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 py-3 font-bold text-white min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cerrar
+                    </button>
                 </div>
             </div>
         </div>
@@ -285,8 +309,12 @@
                 </div>
                 <p class="mt-3 text-sm text-gray-600">Se eliminará el cliente del sistema. Su historial de ventas permanecerá intacto.</p>
                 <div class="mt-5 grid grid-cols-2 gap-3">
-                    <button type="button" wire:click="$set('porEliminar', null)" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cancelar</button>
-                    <button type="button" wire:click="eliminarConfirmado" class="rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px]">Eliminar</button>
+                    <button type="button" wire:click="$set('porEliminar', null)" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                    </button>
+                    <button type="button" wire:click="eliminarConfirmado" class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px]">
+                        <x-heroicon name="trash" class="w-4 h-4" /> Eliminar
+                    </button>
                 </div>
             </div>
         </div>

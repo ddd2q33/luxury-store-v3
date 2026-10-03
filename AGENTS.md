@@ -1,5 +1,29 @@
 # luxury-store-v3 — Convenciones del proyecto
 
+## Desplegar en producción (checklist, 2026-10-02)
+
+El repo se desarrolla en `APP_ENV=local` + `APP_DEBUG=true` a propósito: el panel es
+un back-office local con datos reales, y con debug se depura más rápido. Ese estado
+**no es publicable**. Antes de exponerlo en un servidor:
+
+1. `APP_ENV=production` y `APP_DEBUG=false`. Con `true`, Ignition muestra rutas
+   absolutas, el código fuente, las variables de entorno y el SQL ejecutado.
+2. `APP_URL` con el dominio real, y `SESSION_SECURE_COOKIE` **sin tocar**:
+   `config/session.php` lo deduce de `APP_ENV` y en `production` sale `true`.
+   Ponerlo en `true` a mano en local ROMPE el login (el navegador no acepta la
+   cookie por `http://localhost` y no hay forma de iniciar sesión).
+3. `composer install --no-dev --optimize-autoloader` y `npm ci && npm run build`.
+4. `php artisan config:cache && php artisan route:cache && php artisan view:cache`.
+   Ojo: tras cachear config, cambiar `.env` ya no tiene efecto hasta `config:clear`.
+5. `php artisan storage:link` (los avatares y el catálogo leen de `public/`).
+6. MySQL accesible SOLO desde 127.0.0.1, con usuario propio y no `root` sin clave
+   (que es lo que trae `.env.example` por defecto).
+7. Verificar que `.env` nunca se haya commiteado: ese archivo tiene el `APP_KEY`, que
+   es lo que firma los snapshots de Livewire **y** cifra sesión y cookies. Si se
+   filtró, `php artisan key:generate` **invalida todas las sesiones abiertas**.
+8. `composer audit` sigue reportando vulnerabilidades sin parche (Laravel 9 y PHP 8.0
+   están EOL): aceptable solo en local, **no publicar así**.
+
 ## REGLA PRINCIPAL: todo es responsive, siempre
 
 **Cada componente, vista, tabla, formulario y sección debe funcionar en celular, tablet y escritorio.**
@@ -274,6 +298,32 @@ completo; si un acento vuelve a faltar, es el caso 2.
 `App\Services\CajaService::cerrar($caja)` calcula los totales desde los movimientos y
 escribe `saldo_final`/`fecha_cierre`/`estado`. No editar `cajas` a mano ni con SQL suelto.
 
+### Zona horaria: `America/Bogota`, NUNCA UTC (2026-10-03)
+`config/app.php` tiene `'timezone' => 'America/Bogota'` y `'locale' => 'es'`. **No volver
+a `UTC`/`en`**, que fue lo que había y estaba mal por dos razones:
+
+- Los datos que hay en la BD los escribió el legacy con
+  `date_default_timezone_set('America/Bogota')` (`oldluxury/config.php:3`). Con `UTC`,
+  `now()` daba 5 horas menos y una venta hecha a las 8pm se fechaba en el día **siguiente**,
+  inflando "ventas de hoy" del Dashboard y moviendo el corte de caja.
+- `locale` afecta a Carbon: `Caja` pinta `now()->isoFormat('dddd D [de] MMMM')` y el
+  Dashboard usa `translatedFormat('d M Y')`. Con `en` salía "Friday 2 de October".
+
+- El `php.ini` de XAMPP dice `date.timezone = Europe/Berlin`, pero Laravel lo pisa con
+  `config/app.php` al arrancar. No hay que tocar el php.ini (afectaría a otros proyectos
+  de XAMPP). Solo los scripts que NO pasan por Laravel (`php -r` suelto) usan Berlin.
+- `.env` **no** define `APP_TIMEZONE`/`APP_LOCALE`: si algún día los define, pisan la
+  config y el síntoma reaparece.
+- Verificación por HTTP: `now()->format('H:i')` debe coincidir con la hora real de
+  Colombia, y `isoFormat('dddd D [de] MMMM')` debe salir en español ("viernes 2 de
+  octubre"). Los KPI del Dashboard en 0 no significan bug: la última venta real es de
+  septiembre.
+- **Filas escritas mientras la app estaba en UTC** (solo 2, ambas de prueba, en
+  `cajas` id 72 y `ventas` id 547) tienen la hora corrida +5h. No se corrigen a mano:
+  `cajas` solo se toca con `CajaService`.
+- OJO: el código **no** usa funciones SQL de fecha (`NOW()`, `CURDATE()`); todo pasa por
+  Carbon. Si alguna vez se agregan, hay que convertirlas o usar `whereDate` con Carbon.
+
 
 ### El diseño "no se ve": `public/hot`
 Si `public/hot` existe (lo crea `npm run dev` y no lo borra al morir), `@vite` deja de
@@ -311,6 +361,19 @@ página sale sin estilos, sin Alpine y sin Livewire. Es exactamente "el diseño 
 - Para probar el `max:` de una subida **no** sirve `UploadedFile::fake()->image()->size(3000)`:
   Livewire guarda el contenido **real** en el disco temporal, así que el tamaño inventado
   se pierde y la validación pasa. Hay que usar `createWithContent()` con bytes de verdad.
+- **`wire:click="a(); b()"` SOLO ejecuta `a()` (2026-10-03).** No hay división de sentencias:
+  `vendor/livewire/livewire/js/util/wire-directives.js:86` hace
+  `method.match(/(.*?)\((.*)\)/s)` y el **segundo grupo es greedy**, así que en
+  `editar(5); cerrarDetalle()` captura `5); cerrarDetalle(` como parámetros. El JS que
+  arma es `return (function(){...})(5); cerrarDetalle()`, o sea que la segunda llamada
+  queda **después del `return`** y es código muerto (sin error, sin warning). Pasó en
+  `productos.blade.php` y el síntoma era que el botón "Editar" de la ficha dejaba el
+  modal de detalle abierto encima del formulario (los dos a la vez). Y el mismo bug
+  rompía `$set('quitarImagen', true); $set('imagenArchivo', null)`: solo aplicaba el
+  primer `$set`, así que el archivo elegido no se limpiaba. **Regla: una acción por
+  `wire:click`.** Si hacen falta dos, es un método en el componente, y el estado se
+  deja desde PHP (que es el único sitio que sobrevive a la vista). Hay un test que
+  vigila que nadie vuelva a encadenar: `ProductosModalTest::test_la_vista_no_encadena_sentencias_en_wire_click`.
 
 ### Bugs conocidos (verificados, sin corregir)
 - **`Pedidos::cambiarEstadoConfirmado()` CORREGIDO (2026-09-28):** la excepción al
@@ -368,9 +431,14 @@ Invariantes de Config (si se tocan, mantenerlos):
 4. Nunca `findOrFail()` en un método de Livewire: su `ModelNotFoundException` es un
    `RuntimeException`, escapa de `ejecutar()` y deja pantalla en blanco. Usar
    `$this->usuario($id)`, que lanza `DomainException`.
-5. El middleware `admin` protege la RUTA, no el endpoint de Livewire (que es público).
-   Los componentes admin-only vuelven a comprobar el rol en `mount()` con
-   `abort_unless(Auth::user()?->esAdmin(), 403)`.
+5. El middleware `admin` protege la RUTA **y el endpoint de Livewire**, porque
+   `AppServiceProvider::boot()` hace `Livewire::addPersistentMiddleware([EnsureEsAdmin::class])`.
+   Antes (2026-10-02) NO lo protegía: la lista persistente por defecto de Livewire 2
+   trae `Authenticate` pero no `EnsureEsAdmin`, así que el rol no se revalidaba nunca.
+   `mount()` sigue siendo una segunda barrera (solo corre en la carga inicial).
+   Ojo: `gatherRouteMiddleware()` filtra por el middleware de la ruta ORIGINAL,
+   así que `EnsureEsAdmin` solo se re-ejecuta en rutas que declaran `admin`
+   (empleados, configuración, reportes). No lo pongas global a la ligera.
 
 ### Migraciones de dominio autorizadas (son 2, ninguna más sin preguntar)
 1. `database/migrations/2026_09_28_000001_create_devoluciones_tables.php` crea
@@ -428,9 +496,27 @@ Reglas: transacción + `lockForUpdate()`, lanzar `DomainException` (la captura
 `PanelComponent::ejecutar()`; `RuntimeException` se escapa a pantalla en blanco) y
 `ejecutar()` devuelve `bool` para NO cerrar el formulario si falló.
 
+**Cómo se ejecuta la acción (2026-10-02, ya no hay `findOrFail()` en el panel).**
+Los 18 `findOrFail()` que quedaban en componentes Livewire se reemplazaron por un
+helper por componente (`cliente()`, `producto()`, `categoria()`, `proveedor()`,
+`gasto()`, `abono()`, `devolucion()`) que hace `find()` y lanza `DomainException`.
+Ojo: el helper solo es seguro si su llamada está dentro de algo que lo atrape:
+- Cambia datos y merece confirmación → `ejecutar(fn () => ..., 'Mensaje')`.
+- **Solo lee y llena un formulario o un detalle** (`editar()`, `verDetalle()`,
+  `abrirAjuste()`, cargar un registro para anular) → `cargar(fn () => ...)`,
+  que es `ejecutar()` SIN toast de éxito. Confirmar cada vez que se abre un
+  formulario sería ruido, pero el error tiene que seguir viéndose.
+- Si necesitas el nombre del registro para el mensaje de éxito, llámalo primero
+  con `cargar()` y devuelve temprano si devuelve `null` (ver `Abonos::guardar()`).
+
 ### Reglas para próximos módulos
 1. Todo módulo nuevo: ruta con `->middleware('auth')`, acceso por rol vía
-   `Auth::user()->esAdmin()` (admin-only: proveedores, empleados, configuración, reportes).
+   `Auth::user()->esAdmin()`. Los **admin-only son solo tres: empleados,
+   configuración y reportes** (`web.php:105-109` y `PanelMenu` coinciden).
+   **Proveedores NO es admin-only**: lo ven todos los autenticados, cajero
+   incluido, y editan `saldo_deuda` por `DeudaProveedorService`. Decidido
+   explícitamente el 2026-10-02; una versión anterior de esta línea listaba
+   "proveedores" como admin-only y contradecía al código en tres sitios.
 2. Registrar el módulo en `App\Support\PanelMenu::grupos()` para que aparezca en sidebar + drawer.
 3. Vistas: el page wrapper es solo `<x-panel-layout><div class="p-4 sm:p-6 lg:p-8">
    @livewire('x')</div></x-panel-layout>`. El título y el subtítulo van **dentro** de la
@@ -439,7 +525,9 @@ Reglas: transacción + `lockForUpdate()`, lanzar `DomainException` (la captura
    targets 44px, sin depender de hover.
 4. **Todo layout nuevo necesita `@livewireStyles` en `<head>` Y `@livewireScripts` antes
    de `</body>`** (ya nos pasó: sin eso Livewire no hidrata y el buscador no filtra).
-5. Livewire: `protected string $paginationTheme = 'tailwind';` con `WithPagination`.
+5. Livewire: `PanelComponent` ya trae `use WithPagination` y
+   `protected string $paginationTheme = 'tailwind';`. No los repitas en el
+   componente: hereda de `PanelComponent`, no de `Livewire\Component`.
 6. Verificar cada módulo con datos reales por HTTP/navegador antes de darlo por listo.
 7. El puerto 8000 puede quedar sirviendo código viejo (instancia previa/OPcache):
    para probar código fresco usar otro puerto (`php artisan serve --port=8010`).
@@ -458,7 +546,7 @@ Reglas: transacción + `lockForUpdate()`, lanzar `DomainException` (la captura
   (26 tablas, generada desde `luxury.sql` con `USE` reescrito) + la columna
   `productos.imagen`. Ver counts: 542 ventas, 106 productos, 3 usuarios.
 - La suite usa `DatabaseTransactions` (NUNCA `RefreshDatabase`: dropea el schema
-  legacy). Estado actual: **32 passed, 1 skipped** (no hay productos sin categoria
+  legacy). Estado actual: **60 passed, 1 skipped** (no hay productos sin categoria
   en el dataset), ~2 s. Tras correrla, `luxury` y `luxury_test` quedan identicas.
 - Recrear `luxury_test` si se pierde: (1) `mysql -u root <
   storage/testschema/luxury_test.sql` (el archivo tiene `USE luxury_test`, jamas
@@ -476,11 +564,72 @@ Reglas: transacción + `lockForUpdate()`, lanzar `DomainException` (la captura
   transacción: el proceso del servidor es otro y no ve lo no confirmado. Guardar el hash
   original **y `ultimo_login`**, y restaurar ambos al final. Si no, el password del admin
   se pierde y no es recuperable salvo por `luxury.sql`.
+
+### Carga masiva de precios (`/productos/precios`, 2026-10-03)
+Es la pantalla que llena `productos.precio`, que estaba en `0.00` en 105 de los 106
+productos (el legacy nunca lo cargó, y **no se puede recuperar del historial**:
+`movimientos_caja.descripcion` guarda el total del carrito, no el precio unitario — AF1
+aparece a 120k, 130k, 140k, 150k y 160k — y solo 17 de 541 ventas casan con
+`productos.nombre`).
+
+- `App\Http\Livewire\ProductosPrecios` + `resources/views/livewire/productos-precios.blade.php`.
+  Admin-only y **fuera de `PanelMenu`** a propósito: es una pantalla de trabajo puntual,
+  se entra desde el aviso de "productos sin precio" en `/productos`.
+- Dos vías de entrada, las dos acordadas: escribir el precio fila por fila (`wire:blur`,
+  no `wire:model`: 106 filas escribiendo en la BD en cada tecla serían 106 viajes por
+  segundo) o **pegar la columna desde Excel** (`analizarPegado()` + `aplicarPegado()`).
+- El pegado asocia **por nombre normalizado** (sin tildes, mayúsculas ni signos): si no
+  encuentra el nombre, o si hay productos repetidos, va a `sinAsociar` **con el motivo**;
+  nunca se descarta en silencio.
+- Guardar es **una sola transacción**: o se aplican todos los precios, o ninguno.
+- Lo que quede vacío se escribe en `0.00` y sigue mostrando «Sin precio»
+  (`CatalogoService::precioLegible()`). **No se agregó columna ni tabla**: `precio` ya
+  existía, y el usuario cero los que no llenara.
+- Escribe `producto->forceFill(['precio' => …])` directo, sin pasar por un servicio: el
+  precio NO mueve stock ni genera `inventario_movimientos`, igual que
+  `Stock::guardarMinimo()` con `stock_minimo`.
+- `normalizarDecimal()` acepta `150000`, `150.000`, `1.234,56` y `150 000`. Está replicada
+  en `Productos` y aquí a propósito: es `private` y no se quiere acoplar dos componentes.
+- Tests: `tests/Feature/ProductosPreciosTest.php` (15). Usa nombres de productos REALES del
+  dataset y hace `skipTest()` si no existe, en vez de dar un verde falso.
+- **Efecto colateral en Caja, ya guardado (2026-10-03):** el carrito tomaba
+  `(float) $producto->precio` sin mirar nada, asi que con 105 productos en `0.00` el
+  cajero armaba el carrito y `CajaService::registrarVenta()` lo rechazaba con
+  *"El total debe ser mayor a cero"*, un error sin relacion con lo que estaba pasando.
+  `Caja::agregarProducto()` ahora lo corta antes, con un toast que dice donde cargar el
+  precio. **No se perdio ninguna venta**: se verifico que no hay ni una venta
+  `Completada` con `total = 0`. Ojo que `luxury_test` **no tiene ningun producto con
+  precio** (el dump es anterior a que existiera ese dato), asi que
+  `tests/Feature/CajaPrecioCeroTest.php` le pone precio dentro de la transaccion.
+- `assertEmitted()` de Livewire 2.12 **solo lee `effects.emits`**: un
+  `dispatchBrowserEvent()` cae en `effects.dispatches` y es invisible para el. Para
+  verificar un toast hay que leer `$componente->payload['effects']['dispatches']` a mano.
+  Ojo tambien que `Caja::toast()` sobreescribe el evento a **`caja-toast`**, no a
+  `panel-toast`.
+
+### Sondas CDP para probar UI (herramienta, no código del proyecto)
+En `%TEMP%\opencode` hay sondas de Chrome headless que manejan la sesión por CDP y son la
+única forma de probar de verdad lo que ve el usuario (Livewire modales, ancho de inputs,
+qué se ve a 375px). **No van al repo.** Enseño lo aprendido, porque costó tiempo:
+- El login tiene que ser un paso con `wait`: hacer el POST y en el paso siguiente hacer
+  `Page.navigate` hace que la navegación gane la carrera y termine en `/login`.
+- `cdp_flow.mjs` acepta `@archivo.json` en vez de JSON inline: PowerShell se come las
+  comillas de un JSON pasado como argumento nativo (`node f.mjs $json` llega sin `"`).
+- Los pasos `eval` ignoran el campo `wait`, así que un `eval` que hace `.click()` y
+  después mide encuentra el DOM viejo y da falsos negativos ("el modal no abre" cuando sí).
+  O se usa un paso `click`, o el `eval` espera.
+
 ### Endurecimiento y limpieza (2026-09-29)
 - **`PanelComponent::hydrate()` exige sesion activa** (`Auth::user()?->estaActivo()`,
-  `abort(401)`). El endpoint de Livewire es publico y no pasa por `auth`: esto cierra
-  la puerta a snapshots JS de sesiones viejas o usuarios desactivados, para los 22
-  modulos de golpe. No quitarlo.
+  `abort(401)`). El endpoint de Livewire no pasa por `auth`: esto cierra
+  la puerta a snapshots JS de sesiones viejas o usuarios desactivados. No quitarlo.
+  **(2026-10-02) Esto solo cubría 15 de los 20 componentes:** `Caja`, `Ventas`,
+  `Pedidos`, `Clientes` y `VentasRecientes` heredaban de `Livewire\Component`, NO de
+  `PanelComponent`, así que un usuario desactivado a mitad de sesión conservaba
+  escritura sobre la caja y el stock. **Regla: todo componente del panel extiende
+  `PanelComponent`; si necesita otro toast, sobreescribe `toast()` como `protected`
+  (nunca `private`: bajar la visibilidad de un método `protected` del padre es error
+  fatal de PHP) y mantén el nombre de evento que escucha su vista.**
 - **Eliminados (con todas sus referencias):** `ContadorDemo` + ruta
   `/livewire-demo-test`, `RegisteredUserController` (no hay registro publico),
   `application-logo.blade.php` (0 usos).

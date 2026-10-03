@@ -69,12 +69,21 @@
  * `lg:ml-0` y `lg:ml-64` con `:class` de Alpine NO es seguro: ambas son
  * utilidades del mismo eje y gana la que Tailwind imprima ultima en la hoja,
  * no la que Alpine agregue al final. Con `.is-colapsado` no hay ambiguedad.
+ *
+ * NO hay ningun boton DENTRO del sidebar: el unico control para abrir/cerrar
+ * es el boton de la barra superior (`x-panel.mobile-bar`), igual que en una app
+ * nativa. Por eso el sidebar se sale ENTERO y hace falta que la barra exista
+ * tambien en escritorio: si la barra fuera solo movil, en escritorio no habria
+ * ninguna forma de volver a abrirlo.
  */
 .panel-sidebar-colapsable {
     transition: transform .3s ease;
     will-change: transform;
 }
 
+/* El selector lleva las DOS clases: el markup pone `panel-sidebar-colapsable`
+   siempre y `is-colapsado` cuando `collapsed` es true. Con una sola se
+   rompe el colapso en silencio: el main se encoge pero el sidebar no se mueve. */
 .panel-sidebar-colapsable.is-colapsado {
     transform: translateX(-100%);
 }
@@ -92,14 +101,33 @@
  * Con `lg:` a secas se cambiaria de layout por el ancho de la ventana, que no
  * es lo mismo. Por eso el markup lleva `hidden lg:block` SOLO como red de
  * seguridad: quien manda es la clase.
+ *
+ * Altura de la barra superior. La comparten la barra, el drawer y el backdrop
+ * mediante UNA sola variable.
+ *
+ * Antes cada uno la media por su cuenta (52px en el CSS, 55px el alto real de
+ * la barra en el markup) y se descuadraban 3px: el drawer arrancaba por debajo
+ * de la barra y el backdrop se comia su borde. Si cambia la barra, cambia aqui
+ * y en ningun otro sitio.
+ *
+ * 3.875rem = 62px: el boton de 44px (minimo tactil de AGENTS.md) mas el
+ * padding vertical de 8px y el borde de 1px.
  */
+:root {
+    --panel-barra: calc(3.875rem + env(safe-area-inset-top));
+}
+
 .panel-drawer {
     transition: transform .3s ease;
     will-change: transform;
     transform: translateX(-100%);
     /* El drawer arranca debajo de la barra movil, no de la pantalla. */
-    top: calc(52px + env(safe-area-inset-top));
-    height: calc(100vh - 52px - env(safe-area-inset-top));
+    top: var(--panel-barra);
+    height: calc(100vh - var(--panel-barra));
+    /* `dvh` sigue el alto REAL de la vista cuando el navegador muestra u
+       oculta su barra de direcciones; `vh` se queda con el alto mayor y deja
+       hueco al final al hacer scroll. El `vh` de arriba es el fallback. */
+    height: calc(100dvh - var(--panel-barra));
 }
 
 .panel-drawer.is-abierto {
@@ -107,16 +135,51 @@
     box-shadow: 0 0 60px rgba(0, 0, 0, .55);
 }
 
+/*
+ * Fondo oscurecido + zona tactil para cerrar el menu.
+ *
+ * OJO: esta regla necesita `position: fixed`. Sin el, `inset` no aplica y el
+ * elemento se queda en el flujo normal del documento: medía 0x0, no tapaba
+ * nada y el `@click` de cerrar nunca se disparaba (era un bloque invisible
+ * dentro de `.min-h-screen`). El `z-index` va por debajo del drawer (200) y
+ * por encima de la barra (55), pero el `inset` empieza justo donde termina la
+ * barra, asi que el boton de cerrar de la barra sigue siendo pulsable.
+ */
 .panel-backdrop {
+    position: fixed;
+    z-index: 150;
     transition: opacity .25s ease, visibility .25s ease;
     opacity: 0;
     visibility: hidden;
-    inset: calc(52px + env(safe-area-inset-top)) 0 0 0;
+    inset: var(--panel-barra) 0 0 0;
 }
 
 .panel-backdrop.is-abierto {
     opacity: 1;
     visibility: visible;
+}
+
+/*
+ * Boton de abrir/cerrar el menu. Se hunde al pulsar (en vez de solo cambiar
+ * de color) para que el toque se sienta como en una app nativa. En tactil no
+ * hay hover, asi que el estado visible tiene que ser el `active`.
+ */
+.panel-menu-btn {
+    transition: transform .15s ease, background-color .15s ease;
+}
+
+.panel-menu-btn:active {
+    transform: scale(.92);
+}
+
+@media (hover: hover) {
+    .panel-menu-btn:hover {
+        background: rgba(15, 23, 42, .06);
+    }
+
+    html.dark .panel-menu-btn:hover {
+        background: rgba(255, 255, 255, .08);
+    }
 }
 
 body.panel-menu-abierto {
@@ -132,6 +195,8 @@ body.panel-menu-abierto {
         margin-left: 16rem;
     }
 
+    /* El sidebar sale entero, sin franja: el boton que lo vuelve a abrir esta
+       en la barra superior, que siempre es visible. */
     .panel-main.is-colapsado {
         margin-left: 0;
     }

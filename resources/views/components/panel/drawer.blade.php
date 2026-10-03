@@ -8,21 +8,30 @@
     `open` es true. En escritorio nunca se muestra: lo decide `movil` en
     panel-layout, no el ancho.
 
-    El backdrop arranca debajo de la barra móvil (`inset` en `.panel-backdrop`),
-    igual que app_nav.php:122.
+    El backdrop arranca debajo de la barra superior (`inset` en
+    `.panel-backdrop`), igual que app_nav.php:122, para que el botón de la
+    barra siga siendo pulsable para cerrar.
+
+    SIN botón de cerrar propio: cierra el de la barra superior, el fondo y la
+    tecla Escape. Un "X" aquí tapaba el logo y era un segundo control para lo
+    mismo.
+
+    `id="panel-menu"`: es el destino del `aria-controls` del botón de la barra.
 --}}
 <div class="panel-backdrop"
      x-show="movil && open"
+     :class="open ? 'is-abierto' : ''"
      @click="open = false"
      x-cloak></div>
 
-<aside class="panel-drawer fixed left-0 z-[200] w-72 flex flex-col text-gray-300"
+<aside id="panel-menu"
+       class="panel-drawer fixed left-0 z-[200] w-72 flex flex-col text-gray-300"
        style="background: linear-gradient(to bottom, #000, #000, #111827);
               box-shadow: 0 25px 50px -12px rgba(0,0,0,.5);"
        x-show="movil && open"
        :class="open ? 'is-abierto' : ''"
        x-cloak>
-    <div class="relative flex items-center justify-center px-16 py-5 border-b border-gray-800/30 flex-shrink-0">
+    <div class="relative flex items-center justify-center px-6 py-5 border-b border-gray-800/30 flex-shrink-0">
         <a href="{{ route('dashboard') }}"
            @click="open = false"
            class="flex items-center justify-center min-h-[44px]"
@@ -32,12 +41,6 @@
                  width="125" height="112"
                  class="panel-logo block h-28 w-auto max-w-full object-contain drop-shadow-xl">
         </a>
-        <button type="button"
-                class="absolute right-3 top-1/2 -translate-y-1/2 flex items-center justify-center w-[34px] h-[34px] rounded-full bg-white/10 hover:bg-white/25"
-                @click="open = false"
-                aria-label="Cerrar menú">
-            <x-heroicon name="x-mark" class="w-4 h-4" />
-        </button>
     </div>
 
     {{-- El legacy cierra el drawer al pulsar cualquier enlace (app_nav.php:220);

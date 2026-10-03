@@ -95,14 +95,34 @@ class Categorias extends PanelComponent
         $this->showForm = true;
     }
 
+    /**
+     * Busca la categoría o lanza DomainException. NO se usa findOrFail(): su
+     * ModelNotFoundException es un RuntimeException y escapa a pantalla en
+     * blanco. El conteo de productos solo se carga si el caller lo pide.
+     */
+    private function categoria(int $id, bool $conProductos = false): Categoria
+    {
+        $categoria = $conProductos
+            ? Categoria::withCount('productos')->find($id)
+            : Categoria::find($id);
+
+        if (! $categoria) {
+            throw new \DomainException('Esa categoría ya no existe.');
+        }
+
+        return $categoria;
+    }
+
     public function editar(int $id): void
     {
-        $categoria = Categoria::findOrFail($id);
-        $this->editandoId = $categoria->id;
-        $this->nombre = (string) $categoria->nombre;
-        $this->descripcion = (string) $categoria->descripcion;
-        $this->resetValidation();
-        $this->showForm = true;
+        $this->cargar(function () use ($id) {
+            $categoria = $this->categoria($id);
+            $this->editandoId = $categoria->id;
+            $this->nombre = (string) $categoria->nombre;
+            $this->descripcion = (string) $categoria->descripcion;
+            $this->resetValidation();
+            $this->showForm = true;
+        });
     }
 
     public function guardar(): void
@@ -135,23 +155,29 @@ class Categorias extends PanelComponent
         $id = $this->porEliminar;
 
         if ($id) {
-            $categoria = Categoria::withCount('productos')->findOrFail($id);
+            $ok = $this->cargar(function () use ($id) {
+                $categoria = $this->categoria($id, conProductos: true);
 
-            // Los productos no se borran en cascada (no hay FK en el legacy):
-            // se bloquea el borrado para no dejar productos huerfanos.
-            if ($categoria->productos_count > 0) {
-                $this->toastError(sprintf(
-                    '"%s" tiene %d producto(s). Muévelos a otra categoría antes de eliminarla.',
-                    $categoria->nombre,
-                    $categoria->productos_count
-                ));
+                // Los productos no se borran en cascada (no hay FK en el legacy):
+                // se bloquea el borrado para no dejar productos huerfanos.
+                if ($categoria->productos_count > 0) {
+                    throw new \DomainException(sprintf(
+                        '"%s" tiene %d producto(s). Muévelos a otra categoría antes de eliminarla.',
+                        $categoria->nombre,
+                        $categoria->productos_count
+                    ));
+                }
+
+                $nombre = $categoria->nombre;
+                $categoria->delete();
+                $this->toastOk("Categoría \"{$nombre}\" eliminada");
+            });
+
+            if (! $ok) {
                 $this->porEliminar = null;
 
                 return;
             }
-
-            $categoria->delete();
-            $this->toastOk("Categoría \"{$categoria->nombre}\" eliminada");
         }
 
         $this->porEliminar = null;

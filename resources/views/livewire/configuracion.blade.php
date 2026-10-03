@@ -87,17 +87,24 @@
                             </td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">
                                 <button type="button" wire:click="abrirPassword({{ $u->id }})"
-                                        class="text-indigo-600 hover:text-indigo-700 text-sm font-semibold">Contraseña</button>
+                                        class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold">
+                                    <x-heroicon name="key" class="w-4 h-4" /> Contraseña
+                                </button>
                                 <span class="text-gray-200 mx-1">·</span>
                                 @if ((int) Auth::id() === $u->id)
                                     <span class="text-gray-300 text-sm font-semibold">No editable</span>
                                 @else
                                     <button type="button" wire:click="cambiarEstado({{ $u->id }})"
                                             @class([
-                                                'text-sm font-semibold',
+                                                'inline-flex items-center gap-1 text-sm font-semibold',
                                                 'text-rose-600 hover:text-rose-700'   => $u->estado === 'activo',
                                                 'text-emerald-600 hover:text-emerald-700' => $u->estado === 'inactivo',
                                             ])>
+                                        @if ($u->estado === 'activo')
+                                            <x-heroicon name="x-circle" class="w-4 h-4" />
+                                        @else
+                                            <x-heroicon name="check-circle" class="w-4 h-4" />
+                                        @endif
                                         {{ $u->estado === 'activo' ? 'Desactivar' : 'Activar' }}
                                     </button>
                                 @endif
@@ -141,16 +148,23 @@
 
                     <div class="mt-2 grid grid-cols-2 gap-2">
                         <button type="button" wire:click="abrirPassword({{ $u->id }})"
-                                class="rounded-lg bg-indigo-50 py-2.5 text-xs font-bold text-indigo-700 min-h-[42px] active:scale-[0.98] transition">Contraseña</button>
+                                class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-50 py-2.5 text-xs font-bold text-indigo-700 min-h-[42px] active:scale-[0.98] transition">
+                            <x-heroicon name="key" class="w-4 h-4" /> Contraseña
+                        </button>
                         @if ((int) Auth::id() === $u->id)
                             <span class="rounded-lg bg-gray-50 py-2.5 text-xs font-bold text-gray-400 flex items-center justify-center min-h-[42px]">No editable</span>
                         @else
                             <button type="button" wire:click="cambiarEstado({{ $u->id }})"
                                     @class([
-                                        'rounded-lg py-2.5 text-xs font-bold min-h-[42px] active:scale-[0.98] transition',
+                                        'inline-flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-xs font-bold min-h-[42px] active:scale-[0.98] transition',
                                         'bg-rose-50 text-rose-600'         => $u->estado === 'activo',
                                         'bg-emerald-50 text-emerald-700'   => $u->estado === 'inactivo',
                                     ])>
+                                @if ($u->estado === 'activo')
+                                    <x-heroicon name="x-circle" class="w-4 h-4" />
+                                @else
+                                    <x-heroicon name="check-circle" class="w-4 h-4" />
+                                @endif
                                 {{ $u->estado === 'activo' ? 'Desactivar' : 'Activar' }}
                             </button>
                         @endif
@@ -343,9 +357,12 @@
 
                     <div class="grid grid-cols-2 gap-3 pt-2 pb-6">
                         <button type="button" wire:click="cerrarPassword"
-                                class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">Cancelar</button>
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                        </button>
                         <button type="submit" wire:loading.attr="disabled" wire:target="guardarPassword"
-                                class="rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="check-circle" class="w-5 h-5" wire:loading.remove wire:target="guardarPassword" />
                             <span wire:loading.remove wire:target="guardarPassword">Guardar</span>
                             <span wire:loading wire:target="guardarPassword">Guardando…</span>
                         </button>

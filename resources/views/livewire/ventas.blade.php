@@ -274,9 +274,15 @@
                                 <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase {{ $badge }}">{{ $v->estado }}</span>
                             </td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">
-                                <button type="button" wire:click="verVenta({{ $v->id }})" class="text-indigo-600 hover:text-indigo-700 text-sm font-semibold">Ver</button>
+                                <button type="button" wire:click="verVenta({{ $v->id }})"
+                                        class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold">
+                                    <x-heroicon name="eye" class="w-4 h-4" /> Ver
+                                </button>
                                 <span class="text-gray-200 mx-1.5">·</span>
-                                <button type="button" wire:click="pedirEliminarVenta({{ $v->id }})" class="text-rose-600 hover:text-rose-700 text-sm font-semibold">Anular</button>
+                                <button type="button" wire:click="pedirEliminarVenta({{ $v->id }})"
+                                        class="inline-flex items-center gap-1 text-rose-600 hover:text-rose-700 text-sm font-semibold">
+                                    <x-heroicon name="archive-box-x-mark" class="w-4 h-4" /> Anular
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -305,8 +311,12 @@
                         <span class="px-2 py-0.5 rounded-full text-[9px] font-bold uppercase {{ $badge }}">{{ $v->estado }}</span>
                     </div>
                     <div class="mt-2.5 flex gap-2">
-                        <button type="button" wire:click="verVenta({{ $v->id }})" class="flex-1 rounded-lg bg-gray-100 py-2.5 text-sm font-semibold text-gray-700 min-h-[44px] active:scale-[0.98] transition">Ver</button>
-                        <button type="button" wire:click="pedirEliminarVenta({{ $v->id }})" class="flex-1 rounded-lg bg-rose-50 py-2.5 text-sm font-semibold text-rose-600 min-h-[44px] active:scale-[0.98] transition">Anular</button>
+                        <button type="button" wire:click="verVenta({{ $v->id }})" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-100 py-2.5 text-sm font-semibold text-gray-700 min-h-[44px] active:scale-[0.98] transition">
+                            <x-heroicon name="eye" class="w-4 h-4" /> Ver
+                        </button>
+                        <button type="button" wire:click="pedirEliminarVenta({{ $v->id }})" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-50 py-2.5 text-sm font-semibold text-rose-600 min-h-[44px] active:scale-[0.98] transition">
+                            <x-heroicon name="archive-box-x-mark" class="w-4 h-4" /> Anular
+                        </button>
                     </div>
                 </div>
             @empty
@@ -366,8 +376,12 @@
                     </div>
                 </div>
                 <div class="p-6 pt-4 grid grid-cols-2 gap-3 border-t border-gray-100">
-                    <button type="button" wire:click="closeDetalle" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cerrar</button>
-                    <button type="button" wire:click="pedirEliminarVenta({{ $ventaDetalle['id'] }})" class="rounded-xl bg-rose-50 border border-rose-200 py-3 font-semibold text-rose-700 min-h-[48px]">Anular venta</button>
+                    <button type="button" wire:click="closeDetalle" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cerrar
+                    </button>
+                    <button type="button" wire:click="pedirEliminarVenta({{ $ventaDetalle['id'] }})" class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 border border-rose-200 py-3 font-semibold text-rose-700 min-h-[48px]">
+                        <x-heroicon name="archive-box-x-mark" class="w-4 h-4" /> Anular venta
+                    </button>
                 </div>
             </div>
         </div>
@@ -387,8 +401,12 @@
                 </div>
                 <p class="mt-3 text-sm text-gray-600 leading-relaxed">Se eliminará la venta, su movimiento en caja y <strong>el stock será repuesto</strong>. Esta acción no se puede deshacer.</p>
                 <div class="mt-5 grid grid-cols-2 gap-3">
-                    <button type="button" wire:click="closeDetalle" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cancelar</button>
-                    <button type="button" wire:click="eliminarVentaConfirmada" class="rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px]">Anular</button>
+                    <button type="button" wire:click="closeDetalle" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                    </button>
+                    <button type="button" wire:click="eliminarVentaConfirmada" class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px]">
+                        <x-heroicon name="archive-box-x-mark" class="w-4 h-4" /> Anular
+                    </button>
                 </div>
             </div>
         </div>

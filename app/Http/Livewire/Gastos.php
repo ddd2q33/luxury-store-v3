@@ -130,16 +130,33 @@ class Gastos extends PanelComponent
         $this->showForm = true;
     }
 
+    /**
+     * Busca el gasto o lanza DomainException. NO se usa findOrFail(): su
+     * ModelNotFoundException es un RuntimeException y escapa a pantalla en
+     * blanco.
+     */
+    private function gasto(int $id): Gasto
+    {
+        $gasto = Gasto::find($id);
+        if (! $gasto) {
+            throw new \DomainException('Ese gasto ya no existe.');
+        }
+
+        return $gasto;
+    }
+
     public function editar(int $id): void
     {
-        $gasto = Gasto::findOrFail($id);
-        $this->editandoId = $gasto->id;
-        $this->descripcion = (string) $gasto->descripcion;
-        $this->monto = (string) (float) $gasto->monto;
-        $this->fecha = \Illuminate\Support\Carbon::parse($gasto->fecha)->toDateString();
-        $this->hora = substr((string) $gasto->hora, 0, 5);
-        $this->resetValidation();
-        $this->showForm = true;
+        $this->cargar(function () use ($id) {
+            $gasto = $this->gasto($id);
+            $this->editandoId = $gasto->id;
+            $this->descripcion = (string) $gasto->descripcion;
+            $this->monto = (string) (float) $gasto->monto;
+            $this->fecha = \Illuminate\Support\Carbon::parse($gasto->fecha)->toDateString();
+            $this->hora = substr((string) $gasto->hora, 0, 5);
+            $this->resetValidation();
+            $this->showForm = true;
+        });
     }
 
     public function guardar(): void
@@ -174,13 +191,15 @@ class Gastos extends PanelComponent
         $id = $this->porEliminar;
 
         if ($id) {
-            $gasto = Gasto::findOrFail($id);
-            Gasto::whereKey($id)->delete();
-            $this->toastOk(sprintf(
-                'Gasto eliminado: %s de %s',
-                Money::cents($gasto->monto),
-                Carbon::parse($gasto->fecha)->format('d/m/Y')
-            ));
+            $this->cargar(function () use ($id) {
+                $gasto = $this->gasto($id);
+                Gasto::whereKey($id)->delete();
+                $this->toastOk(sprintf(
+                    'Gasto eliminado: %s de %s',
+                    Money::cents($gasto->monto),
+                    Carbon::parse($gasto->fecha)->format('d/m/Y')
+                ));
+            });
         }
 
         $this->porEliminar = null;

@@ -14,8 +14,9 @@
             </p>
         </div>
         <button type="button" wire:click="nuevo"
-                class="rounded-xl bg-emerald-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-emerald-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-emerald-600/20">
-            + Registrar abono
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-emerald-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-emerald-600/20">
+            <x-heroicon name="plus" class="w-5 h-5" />
+            Registrar abono
         </button>
     </div>
 
@@ -116,7 +117,10 @@
                                 </span>
                             </td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">
-                                <button type="button" wire:click="pedirAnular({{ $abono->id }})" class="text-rose-600 hover:text-rose-700 text-sm font-semibold">Anular</button>
+                                <button type="button" wire:click="pedirAnular({{ $abono->id }})"
+                                        class="inline-flex items-center gap-1 text-rose-600 hover:text-rose-700 text-sm font-semibold">
+                                    <x-heroicon name="archive-box-x-mark" class="w-4 h-4" /> Anular
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -153,7 +157,8 @@
                     </div>
 
                     <button type="button" wire:click="pedirAnular({{ $abono->id }})"
-                            class="mt-3 w-full rounded-lg bg-rose-50 py-2.5 text-xs font-bold text-rose-600 min-h-[42px] active:scale-[0.98] transition">
+                            class="mt-3 w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-50 py-2.5 text-xs font-bold text-rose-600 min-h-[42px] active:scale-[0.98] transition">
+                        <x-heroicon name="archive-box-x-mark" class="w-4 h-4" />
                         Anular abono
                     </button>
                 </div>
@@ -238,9 +243,12 @@
 
                     <div class="grid grid-cols-2 gap-3 pt-2 pb-6">
                         <button type="button" wire:click="$set('showForm', false)"
-                                class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">Cancelar</button>
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                        </button>
                         <button type="submit" wire:loading.attr="disabled" wire:target="guardar"
-                                class="rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 min-h-[48px] active:scale-[0.98] transition">
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="check-circle" class="w-5 h-5" wire:loading.remove wire:target="guardar" />
                             <span wire:loading.remove wire:target="guardar">Registrar abono</span>
                             <span wire:loading wire:target="guardar">Guardando…</span>
                         </button>
@@ -255,6 +263,7 @@
             titulo="Anular abono"
             descripcion="El abono se borra y el monto vuelve a la deuda del proveedor. Queda el saldo anterior guardado en el historial."
             confirmar="anularConfirmado"
+            iconoConfirmar="archive-box-x-mark"
             wire="porAnular" />
     @endif
 </div>

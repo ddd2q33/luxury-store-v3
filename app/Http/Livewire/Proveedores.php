@@ -142,18 +142,38 @@ class Proveedores extends PanelComponent
         $this->showForm = true;
     }
 
+    /**
+     * Busca el proveedor o lanza DomainException. NO se usa findOrFail(): su
+     * ModelNotFoundException es un RuntimeException y escapa a pantalla en
+     * blanco. Los conteos solo se cargan si el caller los necesita.
+     */
+    private function proveedor(int $id, bool $conRelations = false): Proveedor
+    {
+        $proveedor = $conRelations
+            ? Proveedor::withCount(['abonos', 'compras'])->find($id)
+            : Proveedor::find($id);
+
+        if (! $proveedor) {
+            throw new \DomainException('Ese proveedor ya no existe.');
+        }
+
+        return $proveedor;
+    }
+
     public function editar(int $id): void
     {
-        $p = Proveedor::findOrFail($id);
-        $this->editandoId = $p->id;
-        $this->nombre = (string) $p->nombre;
-        $this->contacto = (string) $p->contacto;
-        $this->telefono = (string) $p->telefono;
-        $this->correo = (string) $p->correo;
-        $this->direccion = (string) $p->direccion;
-        $this->descripcionDeudaInicial = (string) $p->descripcion_deuda_inicial;
-        $this->resetValidation();
-        $this->showForm = true;
+        $this->cargar(function () use ($id) {
+            $p = $this->proveedor($id);
+            $this->editandoId = $p->id;
+            $this->nombre = (string) $p->nombre;
+            $this->contacto = (string) $p->contacto;
+            $this->telefono = (string) $p->telefono;
+            $this->correo = (string) $p->correo;
+            $this->direccion = (string) $p->direccion;
+            $this->descripcionDeudaInicial = (string) $p->descripcion_deuda_inicial;
+            $this->resetValidation();
+            $this->showForm = true;
+        });
     }
 
     public function guardar(DeudaProveedorService $servicio): void
@@ -196,43 +216,36 @@ class Proveedores extends PanelComponent
         $id = $this->porEliminar;
 
         if ($id) {
-            $p = Proveedor::withCount(['abonos', 'compras'])->findOrFail($id);
+            $this->cargar(function () use ($id) {
+                $p = $this->proveedor($id, conRelations: true);
 
-            if ($p->abonos_count > 0) {
-                $this->toastError(sprintf(
-                    '"%s" tiene %d abono(s) registrado(s). Anulalos antes de eliminarlo.',
-                    $p->nombre,
-                    $p->abonos_count
-                ));
-                $this->porEliminar = null;
+                if ($p->abonos_count > 0) {
+                    throw new \DomainException(sprintf(
+                        '"%s" tiene %d abono(s) registrado(s). Anulalos antes de eliminarlo.',
+                        $p->nombre,
+                        $p->abonos_count
+                    ));
+                }
 
-                return;
-            }
+                if ($p->compras_count > 0) {
+                    throw new \DomainException(sprintf(
+                        '"%s" tiene %d compra(s) asociadas. No se puede eliminar.',
+                        $p->nombre,
+                        $p->compras_count
+                    ));
+                }
 
-            if ($p->compras_count > 0) {
-                $this->toastError(sprintf(
-                    '"%s" tiene %d compra(s) asociadas. No se puede eliminar.',
-                    $p->nombre,
-                    $p->compras_count
-                ));
-                $this->porEliminar = null;
+                if ((float) ($p->saldo_deuda ?? 0) > 0) {
+                    throw new \DomainException(sprintf(
+                        '"%s" debe %s. Salda la deuda antes de eliminarlo.',
+                        $p->nombre,
+                        Money::cents($p->saldo_deuda)
+                    ));
+                }
 
-                return;
-            }
-
-            if ((float) ($p->saldo_deuda ?? 0) > 0) {
-                $this->toastError(sprintf(
-                    '"%s" debe %s. Salda la deuda antes de eliminarlo.',
-                    $p->nombre,
-                    Money::cents($p->saldo_deuda)
-                ));
-                $this->porEliminar = null;
-
-                return;
-            }
-
-            Proveedor::whereKey($id)->delete();
-            $this->toastOk("Proveedor \"{$p->nombre}\" eliminado");
+                Proveedor::whereKey($id)->delete();
+                $this->toastOk("Proveedor \"{$p->nombre}\" eliminado");
+            });
         }
 
         $this->porEliminar = null;
@@ -254,12 +267,14 @@ class Proveedores extends PanelComponent
 
     public function abrirAjuste(int $id): void
     {
-        $p = Proveedor::findOrFail($id);
-        $this->ajusteId = $p->id;
-        $this->nuevoSaldo = (string) (float) ($p->saldo_deuda ?? 0);
-        $this->razonAjuste = '';
-        $this->resetValidation();
-        $this->showAjuste = true;
+        $this->cargar(function () use ($id) {
+            $p = $this->proveedor($id);
+            $this->ajusteId = $p->id;
+            $this->nuevoSaldo = (string) (float) ($p->saldo_deuda ?? 0);
+            $this->razonAjuste = '';
+            $this->resetValidation();
+            $this->showAjuste = true;
+        });
     }
 
     public function confirmarAjuste(DeudaProveedorService $servicio): void
@@ -271,7 +286,11 @@ class Proveedores extends PanelComponent
             return;
         }
 
-        $proveedor = Proveedor::findOrFail($id);
+        $proveedor = $this->cargar(fn () => $this->proveedor($id));
+
+        if (! $proveedor) {
+            return;
+        }
 
         $this->ejecutar(
             fn () => $servicio->ajustarDeuda($proveedor, (float) $this->nuevoSaldo, $this->razonAjuste),

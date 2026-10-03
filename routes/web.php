@@ -106,6 +106,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/empleados', fn () => view('pages.empleados'))->name('empleados');
     Route::get('/configuracion', fn () => view('pages.configuracion'))->name('configuracion');
     Route::get('/reportes', fn () => view('pages.reportes'))->name('reportes');
+
+    // Carga masiva de precios: admin-only porque escribe en TODO el catálogo.
+    // No está en PanelMenu a propósito: es una pantalla de trabajo pontual, no
+    // un módulo de uso diario. Se entra desde Productos -> "Cargar precios".
+    Route::get('/productos/precios', fn () => view('pages.productos-precios'))->name('productos.precios');
 });
 
 require __DIR__.'/auth.php';

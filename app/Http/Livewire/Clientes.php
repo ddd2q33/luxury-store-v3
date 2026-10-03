@@ -5,15 +5,8 @@ namespace App\Http\Livewire;
 use App\Models\Cliente;
 use App\Models\Pedido;
 use App\Models\Venta;
-use Livewire\Component;
-use Livewire\WithPagination;
-
-class Clientes extends Component
+class Clientes extends PanelComponent
 {
-    use WithPagination;
-
-    protected string $paginationTheme = 'tailwind';
-
     public string $search = '';
 
     // ========== Formulario ==========
@@ -117,17 +110,34 @@ class Clientes extends Component
         $this->showForm = true;
     }
 
+    /**
+     * Busca el cliente o lanza DomainException. NO se usa findOrFail(): su
+     * ModelNotFoundException es un RuntimeException y PanelComponent::ejecutar()
+     * solo atrapa DomainException, así que se vería una pantalla en blanco.
+     */
+    private function cliente(int $id): Cliente
+    {
+        $cliente = Cliente::find($id);
+        if (! $cliente) {
+            throw new \DomainException('Ese cliente ya no existe.');
+        }
+
+        return $cliente;
+    }
+
     public function editar(int $id): void
     {
-        $cliente = Cliente::findOrFail($id);
-        $this->editandoId = $cliente->id;
-        $this->nombre = (string) $cliente->nombre;
-        $this->telefono = (string) $cliente->telefono;
-        $this->correo = (string) $cliente->correo;
-        $this->direccion = (string) $cliente->direccion;
-        $this->ciudad = (string) $cliente->ciudad;
-        $this->notas = (string) $cliente->notas;
-        $this->showForm = true;
+        $this->cargar(function () use ($id) {
+            $cliente = $this->cliente($id);
+            $this->editandoId = $cliente->id;
+            $this->nombre = (string) $cliente->nombre;
+            $this->telefono = (string) $cliente->telefono;
+            $this->correo = (string) $cliente->correo;
+            $this->direccion = (string) $cliente->direccion;
+            $this->ciudad = (string) $cliente->ciudad;
+            $this->notas = (string) $cliente->notas;
+            $this->showForm = true;
+        });
     }
 
     public function guardar(): void
@@ -175,44 +185,46 @@ class Clientes extends Component
 
     public function verDetalle(int $id): void
     {
-        $cliente = Cliente::findOrFail($id);
+        $this->cargar(function () use ($id) {
+            $cliente = $this->cliente($id);
 
-        $ventas = Venta::where('cliente_id', $cliente->id)
-            ->orderByDesc('fecha_venta')
-            ->limit(10)
-            ->get(['id', 'fecha_venta', 'total', 'metodo_pago', 'estado']);
+            $ventas = Venta::where('cliente_id', $cliente->id)
+                ->orderByDesc('fecha_venta')
+                ->limit(10)
+                ->get(['id', 'fecha_venta', 'total', 'metodo_pago', 'estado']);
 
-        $pedidos = Pedido::where('cliente_id', $cliente->id)
-            ->orderByDesc('id')
-            ->limit(10)
-            ->get(['id', 'numero_pedido', 'fecha_pedido', 'total', 'estado']);
+            $pedidos = Pedido::where('cliente_id', $cliente->id)
+                ->orderByDesc('id')
+                ->limit(10)
+                ->get(['id', 'numero_pedido', 'fecha_pedido', 'total', 'estado']);
 
-        $this->clienteDetalle = [
-            'id' => $cliente->id,
-            'nombre' => $cliente->nombre,
-            'telefono' => (string) $cliente->telefono,
-            'correo' => (string) $cliente->correo,
-            'direccion' => (string) $cliente->direccion,
-            'ciudad' => (string) $cliente->ciudad,
-            'notas' => (string) $cliente->notas,
-            'creado' => $cliente->creado_en?->format('d/m/Y'),
-            'ventas' => $ventas->map(fn ($v) => [
-                'id' => $v->id,
-                'fecha' => $v->fecha_venta?->format('d/m/Y H:i'),
-                'total' => (float) $v->total,
-                'metodo' => (string) $v->metodo_pago,
-                'estado' => (string) $v->estado,
-            ])->all(),
-            'pedidos' => $pedidos->map(fn ($p) => [
-                'id' => $p->id,
-                'numero' => (string) $p->numero_pedido,
-                'fecha' => $p->fecha_pedido?->format('d/m/Y'),
-                'total' => (float) $p->total,
-                'estado' => (string) $p->estado,
-            ])->all(),
-            'totalGastado' => (float) $ventas->whereIn('estado', ['Completada', 'completada', 'pagada', 'Pagada'])->sum('total'),
-        ];
-        $this->showDetalle = true;
+            $this->clienteDetalle = [
+                'id' => $cliente->id,
+                'nombre' => $cliente->nombre,
+                'telefono' => (string) $cliente->telefono,
+                'correo' => (string) $cliente->correo,
+                'direccion' => (string) $cliente->direccion,
+                'ciudad' => (string) $cliente->ciudad,
+                'notas' => (string) $cliente->notas,
+                'creado' => $cliente->creado_en?->format('d/m/Y'),
+                'ventas' => $ventas->map(fn ($v) => [
+                    'id' => $v->id,
+                    'fecha' => $v->fecha_venta?->format('d/m/Y H:i'),
+                    'total' => (float) $v->total,
+                    'metodo' => (string) $v->metodo_pago,
+                    'estado' => (string) $v->estado,
+                ])->all(),
+                'pedidos' => $pedidos->map(fn ($p) => [
+                    'id' => $p->id,
+                    'numero' => (string) $p->numero_pedido,
+                    'fecha' => $p->fecha_pedido?->format('d/m/Y'),
+                    'total' => (float) $p->total,
+                    'estado' => (string) $p->estado,
+                ])->all(),
+                'totalGastado' => (float) $ventas->whereIn('estado', ['Completada', 'completada', 'pagada', 'Pagada'])->sum('total'),
+            ];
+            $this->showDetalle = true;
+        });
     }
 
     public function closeDetalle(): void
@@ -231,7 +243,7 @@ class Clientes extends Component
         $this->reset(['editandoId', 'nombre', 'telefono', 'correo', 'direccion', 'ciudad', 'notas']);
     }
 
-    private function toast(string $mensaje, string $tipo = 'ok'): void
+    protected function toast(string $mensaje, string $tipo = 'ok'): void
     {
         $this->dispatchBrowserEvent('clientes-toast', ['mensaje' => $mensaje, 'tipo' => $tipo]);
     }

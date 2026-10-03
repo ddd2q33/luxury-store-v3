@@ -63,8 +63,8 @@
                                     </span>
                                     @if (count($lineas) > 1)
                                         <button type="button" wire:click="quitarLinea({{ $index }})"
-                                                class="text-rose-600 text-xs font-bold min-h-[32px] px-2">
-                                            Quitar
+                                                class="inline-flex items-center gap-1 text-rose-600 text-xs font-bold min-h-[32px] px-2">
+                                            <x-heroicon name="x-mark" class="w-3.5 h-3.5" /> Quitar
                                         </button>
                                     @endif
                                 </div>
@@ -131,11 +131,13 @@
 
                     <div class="flex flex-col sm:flex-row gap-3 pt-1">
                         <button type="button" wire:click="agregarLinea"
-                                class="rounded-xl bg-gray-100 py-3 px-5 font-bold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
-                            + Agregar línea
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 px-5 font-bold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="plus" class="w-5 h-5" />
+                            Agregar línea
                         </button>
                         <button type="submit" wire:loading.attr="disabled" wire:target="registrarMultiple"
-                                class="flex-1 rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 min-h-[48px] active:scale-[0.98] transition shadow-lg shadow-emerald-600/20">
+                                class="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 min-h-[48px] active:scale-[0.98] transition shadow-lg shadow-emerald-600/20">
+                            <x-heroicon name="check-circle" class="w-5 h-5" wire:loading.remove wire:target="registrarMultiple" />
                             <span wire:loading.remove wire:target="registrarMultiple">Registrar ingreso</span>
                             <span wire:loading wire:target="registrarMultiple">Registrando…</span>
                         </button>
@@ -185,7 +187,8 @@
                     </div>
 
                     <button type="submit" wire:loading.attr="disabled" wire:target="registrarSimple"
-                            class="w-full rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 min-h-[48px] active:scale-[0.98] transition shadow-lg shadow-emerald-600/20">
+                            class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 font-bold text-white hover:bg-emerald-700 min-h-[48px] active:scale-[0.98] transition shadow-lg shadow-emerald-600/20">
+                        <x-heroicon name="check-circle" class="w-5 h-5" wire:loading.remove wire:target="registrarSimple" />
                         <span wire:loading.remove wire:target="registrarSimple">Registrar ingreso</span>
                         <span wire:loading wire:target="registrarSimple">Registrando…</span>
                     </button>

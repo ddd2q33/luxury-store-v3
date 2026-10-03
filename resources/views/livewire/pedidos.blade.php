@@ -25,13 +25,15 @@
         </div>
         @if ($tab === 'lista')
             <button type="button" wire:click="irNuevo"
-                    class="rounded-xl bg-indigo-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-indigo-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-indigo-600/20">
-                + Nuevo pedido
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-indigo-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-indigo-600/20">
+                <x-heroicon name="plus" class="w-5 h-5" />
+                Nuevo pedido
             </button>
         @else
             <button type="button" wire:click="$set('tab', 'lista')"
-                    class="rounded-xl bg-gray-100 text-gray-700 px-5 py-2.5 text-sm font-bold hover:bg-gray-200 min-h-[44px]">
-                ← Volver a la lista
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 text-gray-700 px-5 py-2.5 text-sm font-bold hover:bg-gray-200 min-h-[44px]">
+                <x-heroicon name="chevron-double-left" class="w-4 h-4" />
+                Volver a la lista
             </button>
         @endif
     </div>
@@ -107,9 +109,15 @@
                                     <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase {{ $badge }}">{{ $pedido->estado }}</span>
                                 </td>
                                 <td class="px-5 py-3 text-right whitespace-nowrap">
-                                    <button type="button" wire:click="verPedido({{ $pedido->id }})" class="text-indigo-600 hover:text-indigo-700 text-sm font-semibold">Ver</button>
+                                    <button type="button" wire:click="verPedido({{ $pedido->id }})"
+                                            class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold">
+                                        <x-heroicon name="eye" class="w-4 h-4" /> Ver
+                                    </button>
                                     <span class="text-gray-200 mx-1">·</span>
-                                    <button type="button" wire:click="pedirEliminar({{ $pedido->id }})" class="text-rose-600 hover:text-rose-700 text-sm font-semibold">Eliminar</button>
+                                    <button type="button" wire:click="pedirEliminar({{ $pedido->id }})"
+                                            class="inline-flex items-center gap-1 text-rose-600 hover:text-rose-700 text-sm font-semibold">
+                                        <x-heroicon name="trash" class="w-4 h-4" /> Eliminar
+                                    </button>
                                 </td>
                             </tr>
                         @empty
@@ -134,8 +142,12 @@
                         </div>
                         <p class="mt-0.5 text-xs text-gray-400">Entrega: {{ $pedido->fecha_entrega?->format('d/m/Y') ?? '—' }}</p>
                         <div class="mt-2.5 flex gap-2">
-                            <button type="button" wire:click="verPedido({{ $pedido->id }})" class="flex-1 rounded-lg bg-gray-100 py-2.5 text-xs font-bold text-gray-700 min-h-[42px]">Ver</button>
-                            <button type="button" wire:click="pedirEliminar({{ $pedido->id }})" class="flex-1 rounded-lg bg-rose-50 py-2.5 text-xs font-bold text-rose-600 min-h-[42px]">Eliminar</button>
+                            <button type="button" wire:click="verPedido({{ $pedido->id }})" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-100 py-2.5 text-xs font-bold text-gray-700 min-h-[42px]">
+                                <x-heroicon name="eye" class="w-4 h-4" /> Ver
+                            </button>
+                            <button type="button" wire:click="pedirEliminar({{ $pedido->id }})" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-50 py-2.5 text-xs font-bold text-rose-600 min-h-[42px]">
+                                <x-heroicon name="trash" class="w-4 h-4" /> Eliminar
+                            </button>
                         </div>
                     </div>
                 @empty
@@ -333,8 +345,12 @@
                 </div>
 
                 <div class="p-6 pt-3 grid grid-cols-2 gap-3 border-t border-gray-100 mt-3">
-                    <button type="button" wire:click="closeDetalle" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cerrar</button>
-                    <button type="button" wire:click="pedirEliminar({{ $pedidoDetalle['id'] }})" class="rounded-xl bg-rose-50 border border-rose-200 py-3 font-semibold text-rose-700 min-h-[48px]">Eliminar</button>
+                    <button type="button" wire:click="closeDetalle" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cerrar
+                    </button>
+                    <button type="button" wire:click="pedirEliminar({{ $pedidoDetalle['id'] }})" class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-50 border border-rose-200 py-3 font-semibold text-rose-700 min-h-[48px]">
+                        <x-heroicon name="trash" class="w-4 h-4" /> Eliminar
+                    </button>
                 </div>
             </div>
         </div>
@@ -353,8 +369,12 @@
                     <p class="mt-3 text-sm text-gray-600">Confirma que el pedido fue entregado al cliente.</p>
                 @endif
                 <div class="mt-5 grid grid-cols-2 gap-3">
-                    <button type="button" wire:click="$set('porCambiarEstado', null)" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cancelar</button>
-                    <button type="button" wire:click="cambiarEstadoConfirmado" class="rounded-xl bg-gray-900 py-3 font-bold text-white min-h-[48px]">Confirmar</button>
+                    <button type="button" wire:click="$set('porCambiarEstado', null)" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                    </button>
+                    <button type="button" wire:click="cambiarEstadoConfirmado" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-900 py-3 font-bold text-white min-h-[48px]">
+                        <x-heroicon name="check-circle" class="w-4 h-4" /> Confirmar
+                    </button>
                 </div>
             </div>
         </div>
@@ -374,8 +394,12 @@
                 </div>
                 <p class="mt-3 text-sm text-gray-600">Se eliminará el pedido y sus detalles. Si estaba reservando stock, <strong>este será devuelto</strong>.</p>
                 <div class="mt-5 grid grid-cols-2 gap-3">
-                    <button type="button" wire:click="$set('porEliminar', null)" class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">Cancelar</button>
-                    <button type="button" wire:click="eliminarConfirmado" class="rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px]">Eliminar</button>
+                    <button type="button" wire:click="$set('porEliminar', null)" class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px]">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                    </button>
+                    <button type="button" wire:click="eliminarConfirmado" class="inline-flex items-center justify-center gap-2 rounded-xl bg-rose-600 py-3 font-bold text-white hover:bg-rose-700 min-h-[48px]">
+                        <x-heroicon name="trash" class="w-4 h-4" /> Eliminar
+                    </button>
                 </div>
             </div>
         </div>

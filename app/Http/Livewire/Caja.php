@@ -7,15 +7,9 @@ use App\Models\MovimientoCaja;
 use App\Models\Producto;
 use App\Models\Venta;
 use App\Services\CajaService;
-use Livewire\Component;
-use Livewire\WithPagination;
 
-class Caja extends Component
+class Caja extends PanelComponent
 {
-    use WithPagination;
-
-    protected string $paginationTheme = 'tailwind';
-
     // ========== Estado UI ==========
     public string $tab = 'venta'; // venta | movimientos | historial
 
@@ -323,6 +317,15 @@ class Caja extends Component
             return;
         }
 
+        // Sin precio no se puede cobrar: 105 de los 106 productos tienen precio 0.00
+        // porque el legacy nunca lo cargó. Better enterarse al agregar que al cobrar,
+        // donde CajaService::registrarVenta rechaza el total con "mayor a cero".
+        if ((float) $producto->precio <= 0) {
+            $this->toast("\"{$producto->nombre}\" no tiene precio de venta. Cárguelo en Productos → Cargar precios.", 'error');
+
+            return;
+        }
+
         if ($pos === false) {
             $this->carrito[] = [
                 'id' => $producto->id,
@@ -605,7 +608,7 @@ class Caja extends Component
         $this->reset('ventaDetalle', 'showDetalle');
     }
 
-    private function toast(string $mensaje, string $tipo = 'ok'): void
+    protected function toast(string $mensaje, string $tipo = 'ok'): void
     {
         $this->dispatchBrowserEvent('caja-toast', ['mensaje' => $mensaje, 'tipo' => $tipo]);
     }

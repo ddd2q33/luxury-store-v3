@@ -168,23 +168,58 @@ class Productos extends PanelComponent
         $this->showForm = true;
     }
 
+    /**
+     * Busca el producto o lanza DomainException. NO se usa findOrFail(): su
+     * ModelNotFoundException es un RuntimeException y escapa a pantalla en
+     * blanco. Solo se carga la relacion o el conteo que el caller necesita.
+     */
+    private function producto(int $id, string $con = ''): Producto
+    {
+        $query = Producto::query();
+
+        if ($con === 'categoria') {
+            $query->with('categoria');
+        } elseif ($con === 'movimientos') {
+            $query->withCount('movimientos');
+        }
+
+        $producto = $query->find($id);
+
+        if (! $producto) {
+            throw new \DomainException('Ese producto ya no existe.');
+        }
+
+        return $producto;
+    }
+
     public function editar(int $id): void
     {
-        $producto = Producto::findOrFail($id);
-        $this->editandoId = $producto->id;
-        $this->nombre = (string) $producto->nombre;
-        $this->categoria_id = (string) ($producto->categoria_id ?? '');
-        // Input type="number": solo admite punto decimal.
-        $this->precio = $producto->precio === null
-            ? ''
-            : rtrim(rtrim(number_format((float) $producto->precio, 2, '.', ''), '0'), '.');
-        $this->stock = (string) $producto->stock;
-        $this->stock_minimo = (string) $producto->stock_minimo;
-        $this->proveedor = (string) $producto->proveedor;
-        $this->descripcion = (string) ($producto->descripcion ?: $producto->detalles);
-        $this->resetImagen();
-        $this->resetValidation();
-        $this->showForm = true;
+        $this->cargar(function () use ($id) {
+            $producto = $this->producto($id);
+            // El detalle se cierra AQUÍ y no desde la vista. El botón de la
+            // ficha decía `wire:click="editar(1); cerrarDetalle()"` y la segunda
+            // sentencia NUNCA corría: el parser de Livewire 2 usa el regex
+            // `/(.*?)\((.*)\)/s` (js/util/wire-directives.js), cuyo segundo grupo
+            // es greedy, así que se comía `1); cerrarDetalle(` como parámetros y
+            // el `cerrarDetalle()` quedaba como código muerto tras el `return`.
+            // Resultado: los dos modales abiertos a la vez. Cerrar aquí hace que
+            // funcione desde CUALQUIER botón que abra el formulario.
+            $this->cerrarDetalle();
+            $this->editandoId = $producto->id;
+            $this->nombre = (string) $producto->nombre;
+            $this->categoria_id = (string) ($producto->categoria_id ?? '');
+            // Input type="number": solo admite punto decimal.
+            $this->precio = $producto->precio === null
+                ? ''
+                : rtrim(rtrim(number_format((float) $producto->precio, 2, '.', ''), '0'), '.');
+            $this->stock = (string) $producto->stock;
+            $this->stock_minimo = (string) $producto->stock_minimo;
+            $this->proveedor = (string) $producto->proveedor;
+            $this->descripcion = (string) ($producto->descripcion ?: $producto->detalles);
+            $this->resetImagen();
+            $this->resetValidation();
+            $this->showForm = true;
+        });
     }
 
     public function guardar(): void
@@ -253,22 +288,27 @@ class Productos extends PanelComponent
         $id = $this->porEliminar;
 
         if ($id) {
-            $producto = Producto::withCount('movimientos')->findOrFail($id);
+            $ok = $this->cargar(function () use ($id) {
+                $producto = $this->producto($id, 'movimientos');
 
-            if ($producto->movimientos_count > 0) {
-                $this->toastError(sprintf(
-                    '"%s" tiene %d movimiento(s) de inventario. Desactívalo en lugar de borrarlo para no perder la trazabilidad.',
-                    $producto->nombre,
-                    $producto->movimientos_count
-                ));
+                if ($producto->movimientos_count > 0) {
+                    throw new \DomainException(sprintf(
+                        '"%s" tiene %d movimiento(s) de inventario. Desactívalo en lugar de borrarlo para no perder la trazabilidad.',
+                        $producto->nombre,
+                        $producto->movimientos_count
+                    ));
+                }
+
+                $nombre = $producto->nombre;
+                $producto->delete();
+                $this->toastOk("Producto \"{$nombre}\" eliminado");
+            });
+
+            if (! $ok) {
                 $this->porEliminar = null;
 
                 return;
             }
-
-            $nombre = $producto->nombre;
-            $producto->delete();
-            $this->toastOk("Producto \"{$nombre}\" eliminado");
         }
 
         $this->porEliminar = null;
@@ -280,35 +320,37 @@ class Productos extends PanelComponent
 
     public function verDetalle(int $id): void
     {
-        $producto = Producto::with('categoria')->findOrFail($id);
+        $this->cargar(function () use ($id) {
+            $producto = $this->producto($id, 'categoria');
 
-        $movimientos = InventarioMovimiento::where('producto_id', $producto->id)
-            ->orderByDesc('fecha')
-            ->orderByDesc('id')
-            ->limit(20)
-            ->get(['id', 'tipo', 'cantidad', 'observaciones', 'fecha']);
+            $movimientos = InventarioMovimiento::where('producto_id', $producto->id)
+                ->orderByDesc('fecha')
+                ->orderByDesc('id')
+                ->limit(20)
+                ->get(['id', 'tipo', 'cantidad', 'observaciones', 'fecha']);
 
-        $this->productoDetalle = [
-            'id' => $producto->id,
-            'nombre' => $producto->nombre,
-            'categoria' => $producto->categoria?->nombre ?? 'Sin categoría',
-            'precio' => (float) ($producto->precio ?? 0),
-            'stock' => (int) $producto->stock,
-            'stock_minimo' => (int) $producto->stock_minimo,
-            'estado' => $producto->estadoStock(),
-            'proveedor' => (string) ($producto->proveedor ?: ''),
-            'descripcion' => (string) ($producto->descripcion ?: ''),
-            'totalMovimientos' => InventarioMovimiento::where('producto_id', $producto->id)->count(),
-            'movimientos' => $movimientos->map(fn ($m) => [
-                'id' => $m->id,
-                'tipo' => (string) $m->tipo,
-                'cantidad' => (int) $m->cantidad,
-                'observaciones' => (string) ($m->observaciones ?: ''),
-                'fecha' => $m->fecha?->format('d/m/Y'),
-            ])->all(),
-        ];
+            $this->productoDetalle = [
+                'id' => $producto->id,
+                'nombre' => $producto->nombre,
+                'categoria' => $producto->categoria?->nombre ?? 'Sin categoría',
+                'precio' => (float) ($producto->precio ?? 0),
+                'stock' => (int) $producto->stock,
+                'stock_minimo' => (int) $producto->stock_minimo,
+                'estado' => $producto->estadoStock(),
+                'proveedor' => (string) ($producto->proveedor ?: ''),
+                'descripcion' => (string) ($producto->descripcion ?: ''),
+                'totalMovimientos' => InventarioMovimiento::where('producto_id', $producto->id)->count(),
+                'movimientos' => $movimientos->map(fn ($m) => [
+                    'id' => $m->id,
+                    'tipo' => (string) $m->tipo,
+                    'cantidad' => (int) $m->cantidad,
+                    'observaciones' => (string) ($m->observaciones ?: ''),
+                    'fecha' => $m->fecha?->format('d/m/Y'),
+                ])->all(),
+            ];
 
-        $this->showDetalle = true;
+            $this->showDetalle = true;
+        });
     }
 
     public function cerrarDetalle(): void
@@ -350,6 +392,19 @@ class Productos extends PanelComponent
     {
         $this->imagenArchivo = null;
         $this->quitarImagen = false;
+    }
+
+    /**
+     * Botón "Quitar imagen" del formulario. Antes la vista hacía
+     * `wire:click="$set('quitarImagen', true); $set('imagenArchivo', null)"`, pero
+     * por el mismo parser de Livewire 2 (ver `editar()`) solo se aplicaba el
+     * PRIMER `$set`: `imagenArchivo` quedaba con el archivo recién elegido y el
+     * preview seguía mostrándolo. Ahora es un método y se aplican los dos.
+     */
+    public function quitarImagenElegida(): void
+    {
+        $this->quitarImagen = true;
+        $this->imagenArchivo = null;
     }
 
     /**

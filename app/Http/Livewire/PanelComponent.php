@@ -23,7 +23,7 @@ abstract class PanelComponent extends Component
      * no pasa por el middleware `auth` de la ruta, solo por el grupo `web`.
      * Sin este chequeo, alguien con el snapshot JS de una sesion vieja podria
      * seguir disparando acciones (crear, borrar, cerrar caja) ya deslogueado o
-     * desactivado. Con esto, toda accion de los 22 modulos exige sesion activa.
+     * desactivado. Con esto, toda acción de los 20 módulos exige sesión activa.
      */
     public function hydrate(): void
     {
@@ -58,6 +58,27 @@ abstract class PanelComponent extends Component
         try {
             $accion();
             $this->toastOk($mensajeOk);
+
+            return true;
+        } catch (DomainException $e) {
+            $this->toastError($e->getMessage());
+
+            return false;
+        }
+    }
+
+    /**
+     * Igual que ejecutar() pero SIN toast de éxito, para las acciones que solo
+     * leen y llenan un formulario o un detalle (abrir "editar", ver historial).
+     * Confirmar cada vez que se abre un formulario sería ruido, pero el error
+     * tiene que seguir mostrándose: si el registro ya no existe, el DomainException
+     * de los helpers (cliente(), pedido(), producto()...) debe acabar en un toast
+     * y no en un 500 de pantalla completa.
+     */
+    protected function cargar(callable $accion): bool
+    {
+        try {
+            $accion();
 
             return true;
         } catch (DomainException $e) {

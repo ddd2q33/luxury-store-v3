@@ -6,15 +6,9 @@ use App\Models\Pedido;
 use App\Models\PedidoDetalle;
 use App\Models\Producto;
 use Illuminate\Support\Facades\DB;
-use Livewire\Component;
-use Livewire\WithPagination;
 
-class Pedidos extends Component
+class Pedidos extends PanelComponent
 {
-    use WithPagination;
-
-    protected string $paginationTheme = 'tailwind';
-
     public string $tab = 'lista'; // lista | nuevo
 
     public string $filtroEstado = 'todos';
@@ -382,7 +376,7 @@ class Pedidos extends Component
         $this->reset('showDetalle', 'pedidoDetalle');
     }
 
-    private function toast(string $mensaje, string $tipo = 'ok'): void
+    protected function toast(string $mensaje, string $tipo = 'ok'): void
     {
         $this->dispatchBrowserEvent('pedidos-toast', ['mensaje' => $mensaje, 'tipo' => $tipo]);
     }

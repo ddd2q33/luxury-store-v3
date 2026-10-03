@@ -6,15 +6,9 @@ use App\Models\MovimientoCaja;
 use App\Models\Venta;
 use App\Services\CajaService;
 use Illuminate\Support\Carbon;
-use Livewire\Component;
-use Livewire\WithPagination;
 
-class Ventas extends Component
+class Ventas extends PanelComponent
 {
-    use WithPagination;
-
-    protected string $paginationTheme = 'tailwind';
-
     /** Preset del rango: hoy | semana | mes | mes_anterior | custom. */
     public string $preset = 'mes';
 
@@ -282,7 +276,7 @@ class Ventas extends Component
         $this->reset('ventaDetalle', 'showDetalle', 'ventaAEliminar');
     }
 
-    private function toast(string $mensaje, string $tipo = 'ok'): void
+    protected function toast(string $mensaje, string $tipo = 'ok'): void
     {
         $this->dispatchBrowserEvent('ventas-toast', ['mensaje' => $mensaje, 'tipo' => $tipo]);
     }

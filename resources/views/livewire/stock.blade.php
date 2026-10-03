@@ -6,7 +6,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <x-heroicon name="bars-3" class="w-6 h-6 text-indigo-600" />
+                <x-heroicon name="cube" class="w-6 h-6 text-indigo-600" />
                 Stock
             </h2>
             <p class="text-sm text-gray-500 mt-0.5">
@@ -14,7 +14,8 @@
             </p>
         </div>
         <button type="button" wire:click="abrirAjuste()"
-                class="rounded-xl bg-indigo-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-indigo-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-indigo-600/20">
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-indigo-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-indigo-600/20">
+            <x-heroicon name="arrows-right-left" class="w-5 h-5" />
             Ajustar inventario
         </button>
     </div>
@@ -235,9 +236,13 @@
                                 <td class="px-5 py-3">
                                     <div class="flex items-center justify-end gap-4">
                                         <button type="button" wire:click="abrirMinimo({{ $p->id }})"
-                                                class="text-gray-500 hover:text-indigo-600 text-sm font-semibold">Mínimo</button>
+                                                class="inline-flex items-center gap-1 text-gray-500 hover:text-indigo-600 text-sm font-semibold">
+                                            <x-heroicon name="scale" class="w-4 h-4" /> Mínimo
+                                        </button>
                                         <button type="button" wire:click="abrirAjuste({{ $p->id }})"
-                                                class="text-indigo-600 hover:text-indigo-700 text-sm font-semibold">Reponer</button>
+                                                class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold">
+                                            <x-heroicon name="arrows-right-left" class="w-4 h-4" /> Reponer
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -286,12 +291,14 @@
                                         @default text-rose-600 @endswitch">{{ $p->stock }}</p>
                             </div>
                             <button type="button" wire:click="abrirAjuste({{ $p->id }})"
-                                    class="rounded-xl bg-indigo-600 py-2.5 text-xs font-bold text-white min-h-[44px] active:scale-[0.98] transition">
+                                    class="inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2.5 text-xs font-bold text-white min-h-[44px] active:scale-[0.98] transition">
+                                <x-heroicon name="arrows-right-left" class="w-4 h-4" />
                                 Reponer stock
                             </button>
                         </div>
                         <button type="button" wire:click="abrirMinimo({{ $p->id }})"
-                                class="mt-2 w-full rounded-xl border border-gray-200 py-2.5 text-xs font-bold text-gray-600 min-h-[44px] active:scale-[0.98] transition">
+                                class="mt-2 w-full inline-flex items-center justify-center gap-1.5 rounded-xl border border-gray-200 py-2.5 text-xs font-bold text-gray-600 min-h-[44px] active:scale-[0.98] transition">
+                            <x-heroicon name="scale" class="w-4 h-4" />
                             {{ $p->stock_minimo > 0 ? 'Cambiar mínimo' : 'Definir mínimo' }}
                         </button>
                     </div>
@@ -340,11 +347,11 @@
 
                     <div class="mt-5 flex flex-col-reverse sm:flex-row justify-end gap-2">
                         <button type="button" wire:click="cerrarMinimo"
-                                class="w-full sm:w-auto min-h-[44px] px-5 rounded-xl border border-gray-300 font-semibold text-gray-700">
-                            Cancelar
+                                class="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl border border-gray-300 font-semibold text-gray-700">
+                            <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
                         </button>
-                        <button type="submit" class="w-full sm:w-auto min-h-[44px] px-5 rounded-xl bg-indigo-600 font-semibold text-white">
-                            Guardar
+                        <button type="submit" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-xl bg-indigo-600 font-semibold text-white">
+                            <x-heroicon name="check-circle" class="w-4 h-4" /> Guardar
                         </button>
                     </div>
                 </form>
@@ -450,9 +457,12 @@
 
                     <div class="grid grid-cols-2 gap-3 pt-2 pb-6">
                         <button type="button" wire:click="cerrarAjuste"
-                                class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">Cancelar</button>
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                        </button>
                         <button type="submit" wire:loading.attr="disabled" wire:target="guardarAjuste"
-                                class="rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="check-circle" class="w-5 h-5" wire:loading.remove wire:target="guardarAjuste" />
                             <span wire:loading.remove wire:target="guardarAjuste">Registrar</span>
                             <span wire:loading wire:target="guardarAjuste">Registrando…</span>
                         </button>

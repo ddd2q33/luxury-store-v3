@@ -14,8 +14,9 @@
             </p>
         </div>
         <button type="button" wire:click="nuevo"
-                class="rounded-xl bg-indigo-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-indigo-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-indigo-600/20">
-            + Nuevo proveedor
+                class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-indigo-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-indigo-600/20">
+            <x-heroicon name="plus" class="w-5 h-5" />
+            Nuevo proveedor
         </button>
     </div>
 
@@ -107,13 +108,25 @@
                                 @endif
                             </td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">
-                                <button type="button" wire:click="abrirAjuste({{ $p->id }})" class="text-amber-600 hover:text-amber-700 text-sm font-semibold">Deuda</button>
+                                <button type="button" wire:click="abrirAjuste({{ $p->id }})"
+                                        class="inline-flex items-center gap-1 text-amber-600 hover:text-amber-700 text-sm font-semibold">
+                                    <x-heroicon name="scale" class="w-4 h-4" /> Deuda
+                                </button>
                                 <span class="text-gray-200 mx-1">·</span>
-                                <button type="button" wire:click="verHistorial({{ $p->id }})" class="text-gray-500 hover:text-gray-700 text-sm font-semibold">Historial</button>
+                                <button type="button" wire:click="verHistorial({{ $p->id }})"
+                                        class="inline-flex items-center gap-1 text-gray-500 hover:text-gray-700 text-sm font-semibold">
+                                    <x-heroicon name="clipboard-list" class="w-4 h-4" /> Historial
+                                </button>
                                 <span class="text-gray-200 mx-1">·</span>
-                                <button type="button" wire:click="editar({{ $p->id }})" class="text-indigo-600 hover:text-indigo-700 text-sm font-semibold">Editar</button>
+                                <button type="button" wire:click="editar({{ $p->id }})"
+                                        class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold">
+                                    <x-heroicon name="pencil-square" class="w-4 h-4" /> Editar
+                                </button>
                                 <span class="text-gray-200 mx-1">·</span>
-                                <button type="button" wire:click="pedirEliminar({{ $p->id }})" class="text-rose-600 hover:text-rose-700 text-sm font-semibold">Eliminar</button>
+                                <button type="button" wire:click="pedirEliminar({{ $p->id }})"
+                                        class="inline-flex items-center gap-1 text-rose-600 hover:text-rose-700 text-sm font-semibold">
+                                    <x-heroicon name="trash" class="w-4 h-4" /> Eliminar
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -148,13 +161,21 @@
 
                     <div class="mt-3 grid grid-cols-2 gap-2">
                         <button type="button" wire:click="abrirAjuste({{ $p->id }})"
-                                class="rounded-lg bg-amber-50 py-2.5 text-xs font-bold text-amber-700 min-h-[42px] active:scale-[0.98] transition">Ajustar deuda</button>
+                                class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-50 py-2.5 text-xs font-bold text-amber-700 min-h-[42px] active:scale-[0.98] transition">
+                            <x-heroicon name="scale" class="w-4 h-4" /> Ajustar deuda
+                        </button>
                         <button type="button" wire:click="editar({{ $p->id }})"
-                                class="rounded-lg bg-indigo-50 py-2.5 text-xs font-bold text-indigo-700 min-h-[42px] active:scale-[0.98] transition">Editar</button>
+                                class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-50 py-2.5 text-xs font-bold text-indigo-700 min-h-[42px] active:scale-[0.98] transition">
+                            <x-heroicon name="pencil-square" class="w-4 h-4" /> Editar
+                        </button>
                         <button type="button" wire:click="verHistorial({{ $p->id }})"
-                                class="rounded-lg bg-gray-100 py-2.5 text-xs font-bold text-gray-600 min-h-[42px] active:scale-[0.98] transition">Historial de deuda</button>
+                                class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-gray-100 py-2.5 text-xs font-bold text-gray-600 min-h-[42px] active:scale-[0.98] transition">
+                            <x-heroicon name="clipboard-list" class="w-4 h-4" /> Historial de deuda
+                        </button>
                         <button type="button" wire:click="pedirEliminar({{ $p->id }})"
-                                class="rounded-lg bg-rose-50 py-2.5 text-xs font-bold text-rose-600 min-h-[42px] active:scale-[0.98] transition">Eliminar</button>
+                                class="inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-50 py-2.5 text-xs font-bold text-rose-600 min-h-[42px] active:scale-[0.98] transition">
+                            <x-heroicon name="trash" class="w-4 h-4" /> Eliminar
+                        </button>
                     </div>
                 </div>
             @empty
@@ -251,9 +272,12 @@
 
                     <div class="grid grid-cols-2 gap-3 pt-2 pb-6">
                         <button type="button" wire:click="cerrarForm"
-                                class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">Cancelar</button>
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                        </button>
                         <button type="submit" wire:loading.attr="disabled" wire:target="guardar"
-                                class="rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="check-circle" class="w-5 h-5" wire:loading.remove wire:target="guardar" />
                             <span wire:loading.remove wire:target="guardar">{{ $editandoId ? 'Guardar cambios' : 'Crear proveedor' }}</span>
                             <span wire:loading wire:target="guardar">Guardando…</span>
                         </button>
@@ -297,9 +321,12 @@
 
                     <div class="grid grid-cols-2 gap-3 pt-1">
                         <button type="button" wire:click="$set('showAjuste', false)"
-                                class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">Cancelar</button>
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                        </button>
                         <button type="submit" wire:loading.attr="disabled" wire:target="confirmarAjuste"
-                                class="rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 min-h-[48px] active:scale-[0.98] transition">
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 font-bold text-white hover:bg-amber-600 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="scale" class="w-5 h-5" wire:loading.remove wire:target="confirmarAjuste" />
                             <span wire:loading.remove wire:target="confirmarAjuste">Aplicar ajuste</span>
                             <span wire:loading wire:target="confirmarAjuste">Guardando…</span>
                         </button>

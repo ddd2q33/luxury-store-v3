@@ -4,15 +4,9 @@ namespace App\Http\Livewire;
 
 use App\Models\Venta;
 use App\Support\Money;
-use Livewire\Component;
-use Livewire\WithPagination;
 
-class VentasRecientes extends Component
+class VentasRecientes extends PanelComponent
 {
-    use WithPagination;
-
-    protected string $paginationTheme = 'tailwind';
-
     /** Busca por cliente o id de venta. */
     public string $search = '';
 

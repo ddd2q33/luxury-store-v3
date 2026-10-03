@@ -152,11 +152,31 @@ class Abonos extends PanelComponent
         return (float) (Proveedor::find($this->abonoProveedorId)?->saldo_deuda ?? 0);
     }
 
+    /**
+     * Busca el proveedor o lanza DomainException. NO se usa findOrFail(): su
+     * ModelNotFoundException es un RuntimeException y escapa a pantalla en
+     * blanco. La regla `exists:proveedores,id` ya valida el id al guardar, pero
+     * el proveedor puede borrarse entre la validacion y esta consulta.
+     */
+    private function proveedor(int $id): Proveedor
+    {
+        $proveedor = Proveedor::find($id);
+        if (! $proveedor) {
+            throw new \DomainException('Ese proveedor ya no existe.');
+        }
+
+        return $proveedor;
+    }
+
     public function guardar(DeudaProveedorService $servicio): void
     {
         $this->validate();
 
-        $proveedor = Proveedor::findOrFail($this->abonoProveedorId);
+        $proveedor = $this->cargar(fn () => $this->proveedor($this->abonoProveedorId));
+
+        if (! $proveedor) {
+            return;
+        }
 
         $ok = $this->ejecutar(
             fn () => $servicio->registrarAbono(
@@ -182,19 +202,37 @@ class Abonos extends PanelComponent
         $this->porAnular = $id;
     }
 
+    /**
+     * Busca el abono con su proveedor o lanza DomainException. NO se usa
+     * findOrFail(): su ModelNotFoundException es un RuntimeException y escapa
+     * a pantalla en blanco.
+     */
+    private function abono(int $id): AbonoProveedor
+    {
+        $abono = AbonoProveedor::with('proveedor')->find($id);
+        if (! $abono) {
+            throw new \DomainException('Ese abono ya no existe.');
+        }
+
+        return $abono;
+    }
+
     public function anularConfirmado(DeudaProveedorService $servicio): void
     {
         $id = $this->porAnular;
 
         if ($id) {
-            $abono = AbonoProveedor::with('proveedor')->findOrFail($id);
-            $nombre = $abono->proveedor?->nombre ?? 'el proveedor';
-            $monto = $abono->monto;
+            $abono = $this->cargar(fn () => $this->abono($id));
 
-            $this->ejecutar(
-                fn () => $servicio->anularAbono($abono),
-                sprintf('Abono de %s anulado; la deuda de %s volvió a subir', Money::cents($monto), $nombre)
-            );
+            if ($abono) {
+                $nombre = $abono->proveedor?->nombre ?? 'el proveedor';
+                $monto = $abono->monto;
+
+                $this->ejecutar(
+                    fn () => $servicio->anularAbono($abono),
+                    sprintf('Abono de %s anulado; la deuda de %s volvió a subir', Money::cents($monto), $nombre)
+                );
+            }
         }
 
         $this->porAnular = null;

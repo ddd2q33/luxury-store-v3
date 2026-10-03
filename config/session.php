@@ -166,9 +166,15 @@ return [
     | to the server if the browser has a HTTPS connection. This will keep
     | the cookie from being sent to you when it can't be done securely.
     |
+    | Si no se define SESSION_SECURE_COOKIE, se deduce de APP_ENV: en
+    | `production` sale true (obligatorio: el panel maneja ventas y deudas de
+    | proveedores) y en `local` sale false. NO pongas SESSION_SECURE_COOKIE=true
+    | en local: servimos por http://localhost, el navegador no guardaria la
+    | cookie y no habria forma de iniciar sesion.
+    |
     */
 
-    'secure' => env('SESSION_SECURE_COOKIE'),
+    'secure' => env('SESSION_SECURE_COOKIE') ?? (env('APP_ENV') === 'production'),
 
     /*
     |--------------------------------------------------------------------------

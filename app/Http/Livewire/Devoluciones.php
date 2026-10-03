@@ -181,13 +181,31 @@ class Devoluciones extends PanelComponent
         $this->porAnular = $id;
     }
 
+    /**
+     * Busca la devolución o lanza DomainException. NO se usa findOrFail(): su
+     * ModelNotFoundException es un RuntimeException y escapa a pantalla en
+     * blanco.
+     */
+    private function devolucion(int $id): Devolucion
+    {
+        $devolucion = Devolucion::find($id);
+        if (! $devolucion) {
+            throw new \DomainException('Esa devolución ya no existe.');
+        }
+
+        return $devolucion;
+    }
+
     public function anularConfirmado(DevolucionService $servicio): void
     {
         $id = $this->porAnular;
 
         if ($id) {
-            $devolucion = Devolucion::findOrFail($id);
-            $this->ejecutar(fn () => $servicio->anular($devolucion), 'Devolución anulada');
+            $devolucion = $this->cargar(fn () => $this->devolucion($id));
+
+            if ($devolucion) {
+                $this->ejecutar(fn () => $servicio->anular($devolucion), 'Devolución anulada');
+            }
         }
 
         $this->porAnular = null;

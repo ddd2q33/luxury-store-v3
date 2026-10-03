@@ -131,7 +131,9 @@
                             </td>
                             <td class="px-5 py-3 text-right whitespace-nowrap">
                                 <button type="button" wire:click="verFactura({{ $v->id }})"
-                                        class="text-indigo-600 hover:text-indigo-700 text-sm font-semibold">Ver</button>
+                                        class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-semibold">
+                                    <x-heroicon name="eye" class="w-4 h-4" /> Ver
+                                </button>
                             </td>
                         </tr>
                     @empty
@@ -278,10 +280,12 @@
 
                 <div class="px-5 sm:px-6 pb-6 pt-2 grid grid-cols-2 gap-3">
                     <button type="button" wire:click="cerrarFactura"
-                            class="rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">Cerrar</button>
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                        <x-heroicon name="x-mark" class="w-4 h-4" /> Cerrar
+                    </button>
                     <button type="button" onclick="window.print()"
-                            class="rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
-                        Imprimir
+                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
+                        <x-heroicon name="printer" class="w-4 h-4" /> Imprimir
                     </button>
                 </div>
             </div>
