@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 /**
@@ -18,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
 class PanelMenu
 {
     /**
-     * @return array<int, array{titulo:string, icon:string, items:array<int, array{uri:string, label:string, corto:string, icon:string, admin:bool}>}>
+     * @return array<int, array{titulo:string, icon:string, items:array<int, array{uri:string, label:string, corto:string, icon:string, permiso:string}>}>
      */
     public static function grupos(): array
     {
@@ -27,60 +28,61 @@ class PanelMenu
                 'titulo' => 'Principal',
                 'icon' => 'home',
                 'items' => [
-                    ['uri' => 'dashboard', 'label' => 'Home', 'corto' => 'Home', 'icon' => 'chart-line', 'admin' => false],
-                    ['uri' => 'caja', 'label' => 'Caja', 'corto' => 'Caja', 'icon' => 'banknotes', 'admin' => false],
-                    ['uri' => 'ventas', 'label' => 'Ventas', 'corto' => 'Ventas', 'icon' => 'shopping-cart', 'admin' => false],
+                    ['uri' => 'dashboard', 'label' => 'Home', 'corto' => 'Home', 'icon' => 'chart-line', 'permiso' => 'dashboard'],
+                    ['uri' => 'caja', 'label' => 'Caja', 'corto' => 'Caja', 'icon' => 'banknotes', 'permiso' => 'caja'],
+                    ['uri' => 'ventas', 'label' => 'Ventas', 'corto' => 'Ventas', 'icon' => 'shopping-cart', 'permiso' => 'ventas'],
                 ],
             ],
             [
                 'titulo' => 'Clientes',
                 'icon' => 'users',
                 'items' => [
-                    ['uri' => 'clientes', 'label' => 'Clientes', 'corto' => 'Clientes', 'icon' => 'users', 'admin' => false],
-                    ['uri' => 'pedidos', 'label' => 'Pedidos', 'corto' => 'Pedidos', 'icon' => 'clipboard-list', 'admin' => false],
+                    ['uri' => 'clientes', 'label' => 'Clientes', 'corto' => 'Clientes', 'icon' => 'users', 'permiso' => 'clientes'],
+                    ['uri' => 'pedidos', 'label' => 'Pedidos', 'corto' => 'Pedidos', 'icon' => 'clipboard-list', 'permiso' => 'pedidos'],
                 ],
             ],
             [
                 'titulo' => 'Inventario',
                 'icon' => 'cube',
                 'items' => [
-                    ['uri' => 'ingreso', 'label' => 'Ingreso', 'corto' => 'Ingreso', 'icon' => 'truck', 'admin' => false],
-                    ['uri' => 'productos', 'label' => 'Productos', 'corto' => 'Productos', 'icon' => 'cube', 'admin' => false],
-                    ['uri' => 'inventario', 'label' => 'Inventario', 'corto' => 'Inventario', 'icon' => 'building-office', 'admin' => false],
-                    ['uri' => 'stock', 'label' => 'Stock', 'corto' => 'Stock', 'icon' => 'bars-3', 'admin' => false],
-                    ['uri' => 'categorias', 'label' => 'Categorías', 'corto' => 'Categorías', 'icon' => 'tag', 'admin' => false],
-                    ['uri' => 'catalogo', 'label' => 'Catálogo', 'corto' => 'Catálogo', 'icon' => 'book-open', 'admin' => false],
+                    ['uri' => 'ingreso', 'label' => 'Ingreso', 'corto' => 'Ingreso', 'icon' => 'truck', 'permiso' => 'ingreso'],
+                    ['uri' => 'productos', 'label' => 'Productos', 'corto' => 'Productos', 'icon' => 'cube', 'permiso' => 'productos'],
+                    ['uri' => 'inventario', 'label' => 'Inventario', 'corto' => 'Inventario', 'icon' => 'building-office', 'permiso' => 'inventario'],
+                    ['uri' => 'stock', 'label' => 'Stock', 'corto' => 'Stock', 'icon' => 'bars-3', 'permiso' => 'stock'],
+                    ['uri' => 'categorias', 'label' => 'Categorías', 'corto' => 'Categorías', 'icon' => 'tag', 'permiso' => 'categorias'],
+                    ['uri' => 'catalogo', 'label' => 'Catálogo', 'corto' => 'Catálogo', 'icon' => 'book-open', 'permiso' => 'catalogo'],
                 ],
             ],
             [
                 'titulo' => 'Finanzas',
                 'icon' => 'banknotes',
                 'items' => [
-                    ['uri' => 'proveedores', 'label' => 'Proveedores', 'corto' => 'Prov', 'icon' => 'truck', 'admin' => false],
-                    ['uri' => 'movimientos', 'label' => 'Movimientos', 'corto' => 'Mov', 'icon' => 'arrows-right-left', 'admin' => false],
-                    ['uri' => 'facturacion', 'label' => 'Facturación', 'corto' => 'Factura', 'icon' => 'receipt-percent', 'admin' => false],
-                    ['uri' => 'devoluciones', 'label' => 'Devoluciones', 'corto' => 'Dev', 'icon' => 'trending-down', 'admin' => false],
-                    ['uri' => 'gastos', 'label' => 'Gastos', 'corto' => 'Gastos', 'icon' => 'credit-card', 'admin' => false],
-                    ['uri' => 'abonos', 'label' => 'Abonos', 'corto' => 'Abonos', 'icon' => 'banknotes', 'admin' => false],
+                    ['uri' => 'proveedores', 'label' => 'Proveedores', 'corto' => 'Prov', 'icon' => 'truck', 'permiso' => 'proveedores'],
+                    ['uri' => 'movimientos', 'label' => 'Movimientos', 'corto' => 'Mov', 'icon' => 'arrows-right-left', 'permiso' => 'movimientos'],
+                    ['uri' => 'facturacion', 'label' => 'Facturación', 'corto' => 'Factura', 'icon' => 'receipt-percent', 'permiso' => 'facturacion'],
+                    ['uri' => 'devoluciones', 'label' => 'Devoluciones', 'corto' => 'Dev', 'icon' => 'trending-down', 'permiso' => 'devoluciones'],
+                    ['uri' => 'gastos', 'label' => 'Gastos', 'corto' => 'Gastos', 'icon' => 'credit-card', 'permiso' => 'gastos'],
+                    ['uri' => 'abonos', 'label' => 'Abonos', 'corto' => 'Abonos', 'icon' => 'banknotes', 'permiso' => 'abonos'],
                 ],
             ],
             [
                 'titulo' => 'Admin',
                 'icon' => 'shield-check',
                 'items' => [
-                    // Perfil lo ve cualquiera logueado; los otros son admin-only
-                    // y se filtran solos en gruposVisibles() para el resto de roles.
-                    ['uri' => 'profile', 'label' => 'Perfil', 'corto' => 'Perfil', 'icon' => 'user-circle', 'admin' => false],
-                    ['uri' => 'reportes', 'label' => 'Reportes', 'corto' => 'Reportes', 'icon' => 'presentation-chart-bar', 'admin' => true],
-                    ['uri' => 'empleados', 'label' => 'Empleados', 'corto' => 'Empleados', 'icon' => 'users', 'admin' => true],
-                    ['uri' => 'configuracion', 'label' => 'Configuración', 'corto' => 'Config', 'icon' => 'cog', 'admin' => true],
+                    // Perfil lo ve cualquiera logueado; se filtra con un permiso
+                    // inventado que todos tienen, para no dejar una excepcion
+                    // suelta en el filtro de abajo.
+                    ['uri' => 'profile', 'label' => 'Perfil', 'corto' => 'Perfil', 'icon' => 'user-circle', 'permiso' => 'perfil'],
+                    ['uri' => 'reportes', 'label' => 'Reportes', 'corto' => 'Reportes', 'icon' => 'presentation-chart-bar', 'permiso' => 'reportes'],
+                    ['uri' => 'empleados', 'label' => 'Empleados', 'corto' => 'Empleados', 'icon' => 'users', 'permiso' => 'empleados'],
+                    ['uri' => 'configuracion', 'label' => 'Configuración', 'corto' => 'Config', 'icon' => 'cog', 'permiso' => 'configuracion'],
                 ],
             ],
         ];
     }
 
     /**
-     * Normaliza los items que vinieron sin `corto` (por si alguien agrega uno
+ * Normaliza los items que vinieron sin `corto` (por si alguien agrega uno
      * nuevo y se le olvida): cae a `label` recortado, nunca a una cadena vacía
      * que rompería el `corto` de los demás.
      */
@@ -96,16 +98,25 @@ class PanelMenu
         return $grupos;
     }
 
-    /** Grupos que tienen al menos un ítem visible para el usuario actual. */
+    /**
+     * Grupos con al menos un ítem visible para el usuario actual.
+     *
+     * El filtro es por PERMISO, no por `esAdmin()`: cada rol ve su parte
+     * (2026-10-03). Un cajero, por ejemplo, solo entra al grupo Principal y
+     * Clientes; el grupo Admin entero desaparece para él.
+     *
+     * `perfil` no está en App\Support\Roles porque lo ve cualquiera
+     * autenticado: se resuelve acá para no abrir una excepción en el filtro.
+     */
     public static function gruposVisibles(): array
     {
-        $esAdmin = Auth::user()?->esAdmin() ?? false;
+        $usuario = Auth::user();
 
         return collect(static::normalizar(static::grupos()))
-            ->map(function (array $grupo) use ($esAdmin) {
+            ->map(function (array $grupo) use ($usuario) {
                 $grupo['items'] = array_values(array_filter(
                     $grupo['items'],
-                    fn (array $item) => ! $item['admin'] || $esAdmin
+                    fn (array $item) => static::puedeVer($usuario, $item['permiso'] ?? $item['uri'])
                 ));
 
                 return $grupo;
@@ -113,5 +124,22 @@ class PanelMenu
             ->filter(fn (array $grupo) => count($grupo['items']) > 0)
             ->values()
             ->all();
+    }
+
+    /**
+     * El permiso `perfil` es el único abierto a todos los autenticados: es la
+     * cuenta propia del usuario, no un módulo del negocio.
+     */
+    private static function puedeVer(?User $usuario, string $permiso): bool
+    {
+        if (! $usuario) {
+            return false;
+        }
+
+        if ($permiso === 'perfil') {
+            return $usuario->estaActivo();
+        }
+
+        return $usuario->puede($permiso);
     }
 }

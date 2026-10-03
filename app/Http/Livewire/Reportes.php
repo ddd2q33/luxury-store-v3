@@ -40,10 +40,14 @@ class Reportes extends PanelComponent
 
     public string $vista = 'resumen';
 
-    /** Solo admin: el middleware protege la ruta, no el endpoint de Livewire. */
+    /**
+     * Segunda barrera del middleware `permiso:reportes`. mount() solo corre en
+     * la carga inicial; para las acciones posteriores esta el middleware
+     * persistente de Livewire. Desde 2026-10-03 lo ven admin y supervisor.
+     */
     public function mount(): void
     {
-        abort_unless(Auth::user()?->esAdmin(), 403, 'No tienes permisos para acceder a esta seccion.');
+        abort_unless(Auth::user()?->puede('reportes'), 403, 'No tienes permisos para acceder a esta seccion.');
 
         $this->aplicarPreset('30');
     }

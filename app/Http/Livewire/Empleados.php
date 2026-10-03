@@ -45,13 +45,17 @@ class Empleados extends PanelComponent
     ];
 
     /**
-     * El middleware `admin` protege la ruta, pero el endpoint de Livewire es
-     * publico: sin esta guarda un cajero podria montar el componente y llamar
-     * a guardar() a mano.
+     * Segunda barrera del middleware `permiso:empleados`. mount() solo corre en
+     * la carga inicial; para las acciones posteriores esta el middleware
+     * persistente de Livewire. Desde 2026-10-03 lo ven admin y supervisor.
+     *
+     * OJO: este módulo también lista las CUENTAS de `usuarios` (solo lectura).
+     * Verificar el rol de una cuenta ajena no es un problema, pero cambiarlo si:
+     * eso vive en Configuracion, que exige control total.
      */
     public function mount(): void
     {
-        abort_unless(Auth::user()?->esAdmin(), 403, 'No tienes permisos para acceder a esta seccion.');
+        abort_unless(Auth::user()?->puede('empleados'), 403, 'No tienes permisos para acceder a esta seccion.');
     }
 
     protected function rules(): array

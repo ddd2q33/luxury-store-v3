@@ -1,4 +1,4 @@
-<div class="space-y-5" @keydown.escape="cerrarPassword()">
+<div class="space-y-5" @keydown.escape="$wire.cerrarModales()">
 
     <x-panel.toast />
 
@@ -26,18 +26,25 @@
 
     {{-- ================= Usuarios del panel ================= --}}
     <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-        <div class="p-4 sm:p-5 border-b border-gray-100">
-            <h3 class="font-bold text-gray-900 text-sm flex items-center gap-2">
-                <x-heroicon name="users" class="w-4 h-4 text-gray-400" />
-                Usuarios del panel
-            </h3>
-            <p class="text-xs text-gray-500 mt-1 leading-relaxed">
-                Tabla <span class="font-medium">usuarios</span>. El rol define a qué módulos entra
-                cada persona: los admin-only (Empleados y este mismo Config) se ocultan a los demás.
-                <span class="font-medium">No se borran usuarios</span>: sin claves foráneas, cajas,
-                abonos y devoluciones guardan su <span class="font-medium">usuario_id</span> y el borrado
-                dejaría referencias colgadas. Para retirar a alguien, desactívalo.
-            </p>
+        <div class="p-4 sm:p-5 border-b border-gray-100 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+                <h3 class="font-bold text-gray-900 text-sm flex items-center gap-2">
+                    <x-heroicon name="users" class="w-4 h-4 text-gray-400" />
+                    Usuarios del panel
+                </h3>
+                <p class="text-xs text-gray-500 mt-1 leading-relaxed">
+                    Tabla <span class="font-medium">usuarios</span>. El rol define a qué módulos entra
+                    cada persona: los admin-only (Empleados y este mismo Config) se ocultan a los demás.
+                    <span class="font-medium">No se borran usuarios</span>: sin claves foráneas, cajas,
+                    abonos y devoluciones guardan su <span class="font-medium">usuario_id</span> y el borrado
+                    dejaría referencias colgadas. Para retirar a alguien, desactívalo.
+                </p>
+            </div>
+            <button type="button" wire:click="nuevoUsuario"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 text-white px-5 py-2.5 text-sm font-bold hover:bg-indigo-700 min-h-[44px] active:scale-[0.98] transition shadow-lg shadow-indigo-600/20 shrink-0">
+                <x-heroicon name="plus" class="w-5 h-5" />
+                Nuevo usuario
+            </button>
         </div>
 
         {{-- Desktop --}}
@@ -66,12 +73,13 @@
                                 <span class="block text-xs text-gray-400">{{ $u->email }}</span>
                             </td>
                             <td class="px-5 py-3">
-                                {{-- El select envía el valor; la validación real vive en cambiarRol(). --}}
-                                <select wire:change="cambiarRol({{ $u->id }}, $event.target.value)"
+{{-- El select envía el valor; la validación real vive en cambiarRol(). --}}
+                                    {{-- La lista sale de App\Support\Roles, no de aquí. --}}
+                                    <select wire:change="cambiarRol({{ $u->id }}, $event.target.value)"
                                         class="rounded-lg border-gray-200 text-xs font-semibold py-2 pr-8 focus:border-indigo-500 focus:ring-indigo-500 min-h-[40px]"
                                         aria-label="Rol de {{ $u->nombre }}">
-                                    @foreach (['admin' => 'Administrador', 'cajero' => 'Cajero', 'empleado' => 'Empleado'] as $valor => $texto)
-                                        <option value="{{ $valor }}" @selected($u->rol === $valor)>{{ $texto }}</option>
+                                    @foreach ($this->roles() as $r)
+                                        <option value="{{ $r['value'] }}" @selected($u->rol === $r['value'])> {{ $r['label'] }}</option>
                                     @endforeach
                                 </select>
                             </td>
@@ -140,8 +148,8 @@
                         <label for="rol-m-{{ $u->id }}" class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Rol</label>
                         <select id="rol-m-{{ $u->id }}" wire:change="cambiarRol({{ $u->id }}, $event.target.value)"
                                 class="w-full rounded-xl border-gray-200 text-sm font-semibold min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
-                            @foreach (['admin' => 'Administrador', 'cajero' => 'Cajero', 'empleado' => 'Empleado'] as $valor => $texto)
-                                <option value="{{ $valor }}" @selected($u->rol === $valor)>{{ $texto }}</option>
+                            @foreach ($this->roles() as $r)
+                                <option value="{{ $r['value'] }}" @selected($u->rol === $r['value'])> {{ $r['label'] }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -322,6 +330,103 @@
             <span class="text-gray-400">alterna el tema desde cualquier pantalla. No funciona mientras escribes en un campo.</span>
         </p>
     </div>
+
+    {{-- ================= Modal: nuevo usuario ================= --}}
+    @if ($showForm)
+        <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div class="absolute inset-0 bg-gray-900/60 backdrop-blur-sm" wire:click="cerrarForm"></div>
+            <div class="relative w-full sm:max-w-lg bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[90vh] flex flex-col">
+                <div class="p-6 pb-4">
+                    <div class="w-10 h-1.5 bg-gray-200 rounded-full mx-auto sm:hidden mb-4"></div>
+                    <h3 class="text-lg font-bold text-gray-900">Nuevo usuario</h3>
+                    <p class="text-sm text-gray-500 mt-0.5">
+                        Crea un acceso al panel. Se guarda en la tabla
+                        <span class="font-medium">usuarios</span>.
+                    </p>
+                </div>
+
+                <form wire:submit="guardarUsuario" class="px-6 overflow-y-auto flex-1 space-y-3.5">
+                    <div>
+                        <label for="cfg-nombre" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Nombre completo *</label>
+                        <input id="cfg-nombre" type="text" wire:model="nombre" autocomplete="name"
+                               class="w-full rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                               placeholder="Ana María Pérez">
+                        @error('nombre') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="cfg-username" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Nombre de usuario *</label>
+                        <input id="cfg-username" type="text" wire:model="username" autocomplete="off"
+                               class="w-full rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                               placeholder="ana.perez">
+                        @error('username') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="cfg-email" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Correo *</label>
+                        <input id="cfg-email" type="email" wire:model="email" autocomplete="off"
+                               class="w-full rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                               placeholder="ana@luxury.com">
+                        @error('email') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label for="cfg-rol" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Rol *</label>
+                            <select id="cfg-rol" wire:model="rol"
+                                    class="w-full rounded-xl border-gray-200 text-sm font-semibold min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
+                                {{-- roles() viene de App\Support\Roles: si se agrega un rol al mapa, --}}
+                                {{-- aparece acá sin tocar esta vista. --}}
+                                @foreach ($this->roles() as $r)
+                                    <option value="{{ $r['value'] }}"> {{ $r['label'] }}</option>
+                                @endforeach
+                            </select>
+                            @error('rol') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+                        <div>
+                            <label for="cfg-estado" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Estado *</label>
+                            <select id="cfg-estado" wire:model="estado"
+                                    class="w-full rounded-xl border-gray-200 text-sm font-semibold min-h-[44px] focus:border-indigo-500 focus:ring-indigo-500">
+                                @foreach (['activo' => 'Activo', 'inactivo' => 'Inactivo'] as $valor => $texto)
+                                    <option value="{{ $valor }}">{{ $texto }}</option>
+                                @endforeach
+                            </select>
+                            @error('estado') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="cfg-nuevo-pass" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Contraseña *</label>
+                        <input id="cfg-nuevo-pass" type="password" wire:model="password" autocomplete="new-password"
+                               class="w-full rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                               placeholder="Mínimo 8 caracteres">
+                        @error('password') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div>
+                        <label for="cfg-nuevo-pass2" class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1.5 block">Repetir contraseña *</label>
+                        <input id="cfg-nuevo-pass2" type="password" wire:model="passwordConfirm" autocomplete="new-password"
+                               class="w-full rounded-xl border-gray-200 focus:border-indigo-500 focus:ring-indigo-500 min-h-[44px]"
+                               placeholder="Repite la contraseña">
+                        @error('passwordConfirm') <p class="mt-1 text-sm text-rose-600">{{ $message }}</p> @enderror
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-2 pb-6">
+                        <button type="button" wire:click="cerrarForm"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-gray-100 py-3 font-semibold text-gray-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="x-mark" class="w-4 h-4" /> Cancelar
+                        </button>
+                        <button type="submit" wire:loading.attr="disabled" wire:target="guardarUsuario"
+                                class="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 py-3 font-bold text-white hover:bg-indigo-700 min-h-[48px] active:scale-[0.98] transition">
+                            <x-heroicon name="check-circle" class="w-5 h-5" wire:loading.remove wire:target="guardarUsuario" />
+                            <span wire:loading.remove wire:target="guardarUsuario">Crear usuario</span>
+                            <span wire:loading wire:target="guardarUsuario">Creando…</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
 
     {{-- ================= Modal: contraseña ================= --}}
     @if ($porEditar)

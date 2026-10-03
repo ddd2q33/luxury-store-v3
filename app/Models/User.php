@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Roles;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -48,14 +49,63 @@ class User extends Authenticatable
         return $query->where('estado', 'activo');
     }
 
+    /**
+     * ¿Puede entrar a este módulo? El mapa rol -> permisos vive en
+     * App\Support\Roles, que es la fuente única (decidido 2026-10-03).
+     *
+     * OJO: no usar `$this->rol === 'x'` por ahí. Este método además exige que la
+     * cuenta esté activa, así que una cuenta desactivada pierde el acceso aunque
+     * el rol siga siendo el mismo.
+     */
+    public function puede(string $modulo): bool
+    {
+        return Roles::usuarioPuede($this, $modulo);
+    }
+
+    /** Acción puntual dentro de un módulo (anular venta, etc). */
+    public function puedeAccion(string $accion): bool
+    {
+        return Roles::usuarioPuedeAccion($this, $accion);
+    }
+
+    /**
+     * Control total. Es el ÚNICO chequeo que el legacy entendía por admin, así
+     * que se deja como estaba y no se reemplaza por `puede('configuracion')`:
+     * otras cosas dependen de él (Configuracion, EnsureEsAdmin, PanelMenu).
+     */
     public function esAdmin(): bool
     {
-        return $this->rol === 'admin';
+        return $this->rol === Roles::ADMIN;
+    }
+
+    /**
+     * Lo que puede hacer el admin, menos administrar cuentas: ve reportes,
+     * empleados y finanzas, pero no toca roles ni contraseñas.
+     */
+    public function esSupervisor(): bool
+    {
+        return $this->rol === Roles::SUPERVISOR;
+    }
+
+    /** Admin o supervisor: los dos que pueden ver cifras de todo el negocio. */
+    public function esSupervision(): bool
+    {
+        return $this->esAdmin() || $this->esSupervisor();
+    }
+
+    public function esOperador(): bool
+    {
+        return $this->rol === Roles::OPERADOR;
     }
 
     public function esCajero(): bool
     {
-        return $this->rol === 'cajero';
+        return $this->rol === Roles::CAJERO;
+    }
+
+    public function esEmpleado(): bool
+    {
+        return $this->rol === Roles::EMPLEADO;
     }
 
     /**

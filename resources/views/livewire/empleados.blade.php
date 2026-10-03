@@ -1,4 +1,4 @@
-<div class="space-y-5" @keydown.escape="cerrarForm(); $wire.porEliminar = null">
+<div class="space-y-5" @keydown.escape="$wire.cerrarForm(); $wire.porEliminar = null">
 
     <x-panel.toast />
 

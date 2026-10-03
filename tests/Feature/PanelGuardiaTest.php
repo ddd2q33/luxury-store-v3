@@ -5,7 +5,9 @@ namespace Tests\Feature;
 use App\Http\Livewire\PanelComponent;
 use App\Http\Middleware\EnsureEsAdmin;
 use App\Models\User;
+use App\Support\Roles;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -207,19 +209,33 @@ class PanelGuardiaTest extends TestCase
     }
 
     /**
-     * Un usuario ya activo del dataset. No se crean usuarios: el hash de
-     * password no es recuperable y `usuarios` esta en la BD real.
+     * Un usuario activo con ese rol. Usa uno del dataset si existe y, si no,
+     * crea uno de usar y tirar: la migracion del 2026-10-03 remapeo las cuentas
+     * que existian a `operador`, asi que `cajero` ya no esta en el dataset y
+     * estas pruebas no pueden depender de el.
+     *
+     * Es seguro crear usuarios AQUI porque el destino es `luxury_test` (una copia
+     * descartable) y la transaccion se revierte al final. En `luxury` real NO se
+     * puede: el hash de password no es recuperable.
      */
     private function usuario(string $rol): User
     {
         $usuario = User::where('rol', $rol)->where('estado', 'activo')->orderBy('id')->first();
 
-        $this->assertNotNull(
-            $usuario,
-            "El dataset de luxury_test no tiene ningun usuario activo con rol [{$rol}]."
-        );
+        if ($usuario) {
+            return $usuario;
+        }
 
-        return $usuario;
+        $this->assertTrue(Roles::existe($rol), "El rol [{$rol}] no existe en el enum de usuarios.rol.");
+
+        return User::create([
+            'nombre' => "Prueba {$rol}",
+            'username' => "prueba.{$rol}",
+            'email' => "prueba.{$rol}@luxury.com",
+            'rol' => $rol,
+            'estado' => 'activo',
+            'password' => Hash::make('ClaveDePrueba123'),
+        ]);
     }
 
     /** hydrate() tiene que haber cortado la llamada con un 401. */

@@ -3,10 +3,12 @@
 namespace App\Http\Livewire;
 
 use App\Models\User;
+use App\Support\Roles;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\Rule;
 
 /**
  * Admin → Config. En el legacy este módulo (`oldluxury/configuracion/index.php`)
@@ -26,13 +28,57 @@ class Configuracion extends PanelComponent
 
     public string $confirmarPassword = '';
 
+    // ========== Formulario: nuevo usuario ==========
+    public bool $showForm = false;
+
+    public string $nombre = '';
+
+    public string $username = '';
+
+    public string $email = '';
+
+    public string $rol = 'empleado';
+
+    public string $estado = 'activo';
+
+    public string $password = '';
+
+    public string $passwordConfirm = '';
+
     /**
-     * El middleware `admin` protege la ruta, pero el endpoint de Livewire es
-     * publico: sin esta guarda un cajero podria montar el componente.
+     * Segunda barrera del middleware. mount() corre solo en la carga inicial,
+     * asi que esto solo cubre la primera pantalla; para las acciones
+     * posteriores esta el middleware persistente de Livewire.
      */
     public function mount(): void
     {
         abort_unless(Auth::user()?->esAdmin(), 403, 'No tienes permisos para acceder a esta seccion.');
+    }
+
+    /**
+     * El mapa rol -> permisos, para la ficha de cada usuario.
+     *
+     * @return array{value:string, label:string, resumen:string, total:bool, permisos:array<int, array{modulo:string, etiqueta:string}>, acciones:array<int, array{accion:string, etiqueta:string}>}
+     */
+    public function roles(): array
+    {
+        return collect(Roles::TODOS())
+            ->map(fn (array $r, string $valor) => [
+                'value' => $valor,
+                'label' => $r['label'],
+                'resumen' => $r['resumen'],
+                'total' => $r['total'],
+                'permisos' => array_map(
+                    fn (string $m) => ['modulo' => $m, 'etiqueta' => Roles::etiquetaModulo($m)],
+                    Roles::permisosDe($valor)
+                ),
+                'acciones' => array_map(
+                    fn (string $a) => ['accion' => $a, 'etiqueta' => Roles::etiquetaAccion($a)],
+                    $r['acciones']
+                ),
+            ])
+            ->values()
+            ->all();
     }
 
     protected function rules(): array
@@ -43,10 +89,43 @@ class Configuracion extends PanelComponent
         ];
     }
 
+    /**
+     * Reglas del alta de usuario. Van aparte de rules() porque rules() es el
+     * juego que aplica `$this->validate()` en guardarPassword(): si se metieran
+     * aquí, cambiar una contraseña exigiría rellenar nombre/username/email.
+     */
+    protected function reglasNuevoUsuario(): array
+    {
+        return [
+            'nombre' => ['required', 'string', 'max:100'],
+            'username' => ['required', 'string', 'max:50', Rule::unique('usuarios', 'username')],
+            'email' => ['required', 'string', 'email', 'max:100', Rule::unique('usuarios', 'email')],
+            'rol' => ['required', Rule::in(Roles::valores())],
+            'estado' => ['required', Rule::in(['activo', 'inactivo'])],
+            'password' => ['required', 'string', 'min:8'],
+            'passwordConfirm' => ['required', 'same:password'],
+        ];
+    }
+
     protected $messages = [
         'nuevoPassword.required' => 'Escribe la nueva contraseña.',
         'nuevoPassword.min' => 'La contraseña debe tener al menos 8 caracteres.',
         'confirmarPassword.same' => 'Las contraseñas no coinciden.',
+        'nombre.required' => 'Escribe el nombre completo.',
+        'nombre.max' => 'El nombre no puede pasar de 100 caracteres.',
+        'username.required' => 'Escribe el nombre de usuario.',
+        'username.max' => 'El nombre de usuario no puede pasar de 50 caracteres.',
+        'username.unique' => 'Ese nombre de usuario ya está en uso.',
+        'email.required' => 'Escribe el correo.',
+        'email.email' => 'El correo no tiene un formato válido.',
+        'email.max' => 'El correo no puede pasar de 100 caracteres.',
+        'email.unique' => 'Ese correo ya está registrado.',
+        'rol.in' => 'Ese rol no existe.',
+        'estado.in' => 'Ese estado no existe.',
+        'password.required' => 'Escribe la contraseña.',
+        'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+        'passwordConfirm.required' => 'Repite la contraseña.',
+        'passwordConfirm.same' => 'Las contraseñas no coinciden.',
     ];
 
     /**
@@ -145,7 +224,7 @@ class Configuracion extends PanelComponent
     public function cambiarRol(int $id, string $rol): void
     {
         $this->ejecutar(function () use ($id, $rol) {
-            if (! in_array($rol, ['admin', 'cajero', 'empleado'], true)) {
+            if (! Roles::existe($rol)) {
                 throw new \DomainException('Ese rol no existe.');
             }
 
@@ -231,5 +310,61 @@ class Configuracion extends PanelComponent
     public function cerrarPassword(): void
     {
         $this->reset(['nuevoPassword', 'confirmarPassword', 'porEditar']);
+    }
+
+    // ====================================================================
+    // Alta de usuario
+    // ====================================================================
+
+    public function nuevoUsuario(): void
+    {
+        $this->reset(['nombre', 'username', 'email', 'password', 'passwordConfirm', 'rol', 'estado']);
+        $this->rol = 'empleado';
+        $this->estado = 'activo';
+        $this->resetValidation();
+        $this->showForm = true;
+    }
+
+    public function cerrarForm(): void
+    {
+        $this->reset(['nombre', 'username', 'email', 'password', 'passwordConfirm', 'rol', 'estado', 'showForm']);
+        $this->resetValidation();
+    }
+
+    public function guardarUsuario(): void
+    {
+        $this->validate($this->reglasNuevoUsuario(), $this->messages);
+
+        $ok = $this->ejecutar(function () {
+            try {
+                User::create([
+                    'nombre' => trim($this->nombre),
+                    'username' => trim($this->username),
+                    'email' => trim($this->email),
+                    'rol' => $this->rol,
+                    'estado' => $this->estado,
+                    'password' => Hash::make($this->password),
+                ]);
+            } catch (\Illuminate\Database\QueryException $e) {
+                // La validación ya avisa de duplicados; esto cubre una carrera
+                // entre el chequeo y el INSERT (los índices UNIQUE de `usuarios`).
+                throw new \DomainException('No se pudo crear: el usuario o el correo ya existen.');
+            }
+        }, 'Usuario creado');
+
+        if ($ok) {
+            $this->cerrarForm();
+        }
+    }
+
+    /**
+     * Cierra cualquiera de los dos modales. La vista la usa en @keydown.escape.
+     * Antes llamaba a cerrarPassword() sin `$wire.` desde Alpine, así que la
+     * tecla Esc tiraba un error de JS y no cerraba nada.
+     */
+    public function cerrarModales(): void
+    {
+        $this->cerrarPassword();
+        $this->cerrarForm();
     }
 }

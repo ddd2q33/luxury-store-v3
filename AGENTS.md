@@ -440,6 +440,41 @@ página sale sin estilos, sin Alpine y sin Livewire. Es exactamente "el diseño 
   `Caja::agregarPorCodigo()` busca por **nombre o id**. No agregar el campo al formulario sin
   crear antes la columna (migración de dominio = preguntar).
 
+### Roles y permisos (2026-10-03)
+La autorización vive **en código**, no en tablas: `app/Support/Roles.php` es la
+fuente única y no se puede duplicar la matriz en las vistas.
+
+- El enum de `usuarios.rol` pasó de 3 valores a 5. La migración
+  `2026_10_03_000001_ampliar_enum_rol_usuarios.php` lo amplía y su `down()`
+  revierte. **Al recrear `luxury_test` hay que repetir ese paso** (ver la
+  sección de pruebas).
+- **Por qué `operador` existe:** las cuentas que tenían `cajero` o `empleado`
+  tenían en la práctica acceso a casi todo. Al partir el mapa en 5 roles, esas
+  dos would've perdido módulos, así que se remapearon a `operador`
+  (ids 2 y 4) para **conservar exactamente el acceso que ya tenían**. No
+  inventar un sexto rol para "lo que había antes": es `operador`.
+- Matriz:
+  - `admin`: todo.
+  - `supervisor`: todo menos `configuracion`.
+  - `operador`: todo menos `configuracion`, `reportes` y `empleados`.
+  - `cajero`: `dashboard`, `caja`, `ventas`, `clientes`, `pedidos`, `catalogo`.
+  - `empleado`: los de `cajero` sin `caja`, más `ingreso`, `productos`,
+    `inventario`, `stock`, `categorias`.
+- `anular_venta` es una **acción**, no un módulo (borra la venta, su movimiento
+  de caja y repone stock). Los tres botones de anulación se ocultan sin
+  permiso, y `Ventas` la exige en el servidor.
+- `perfil` NO es un módulo: lo ve cualquier usuario activo. El menú lo cuenta
+  aparte, así que hay 20 módulos de negocio, no 21.
+- `productos.precios` exige `admin` (pantalla de trabajo puntual, fuera del
+  menú).
+- Dos capas, y hacen falta las dos: `EnsurePermiso` va en la **ruta**, y
+  `AppServiceProvider` lo suma a `Livewire::addPersistentMiddleware()` para que
+  el endpoint de Livewire también revalide. Lo mismo que invariant 5 de
+  Config: si no está en la lista persistente, el permiso no se revalida nunca.
+- `PanelMenu::gruposVisibles()` filtra por permisos, así que el sidebar y el
+  drawer se adaptan solos. Cada item del menú debe tener su clave en el mapa de
+  `Roles`: hay un test que lo verifica.
+
 ### Admin (Perfil / Empleados / Config)
 - **Perfil** (`/profile`, cualquier autenticado): sigue siendo `ProfileController` + partials,
   pero la vista usa `x-panel-layout` (antes usaba `layouts.app` de Breeze y se veía sin
@@ -449,7 +484,8 @@ página sale sin estilos, sin Alpine y sin Livewire. Es exactamente "el diseño 
   solo lectura de `usuarios` para separar "personal" de "acceso".
 - **Config** (`/configuracion`, admin-only): en el legacy `oldluxury/configuracion/index.php`
   trabajaba **solo sobre `usuarios`** (alta, rol, borrado) más una sección "Apariencia" sin
-  persistencia. Aquí: cambio de rol, activar/desactivar y reset de contraseña.
+  persistencia. Aquí: **alta de usuario** (`nuevoUsuario()`/`guardarUsuario()`), cambio
+  de rol, activar/desactivar y reset de contraseña.
   Los datos de empresa se muestran **en solo lectura y etiquetados como datos de ejemplo**,
   porque en el legacy eran literales en `config.php` ("Calle 123", "+57 300 123 4567"), no
   filas de ninguna tabla. Guardarlos exigiría una tabla de configuración: **preguntar antes**.
@@ -472,6 +508,19 @@ Invariantes de Config (si se tocan, mantenerlos):
    Ojo: `gatherRouteMiddleware()` filtra por el middleware de la ruta ORIGINAL,
    así que `EnsureEsAdmin` solo se re-ejecuta en rutas que declaran `admin`
    (empleados, configuración, reportes). No lo pongas global a la ligera.
+6. El alta y el cambio de contraseña usan **juegos de reglas separados**: `rules()` solo
+   valida `nuevoPassword`/`confirmarPassword` (lo consume `guardarPassword()`), y
+   `reglasNuevoUsuario()` valida el alta (`Rule::unique` sobre `usuarios.username` y
+   `usuarios.email`). No fusionarlas: si el alta metiera sus campos en `rules()`, cambiar
+   una contraseña exigiría rellenar nombre/usuario/correo. El alta crea con
+   `User::create()` + `Hash::make()` dentro de `ejecutar()`; un `QueryException` (carrera
+   contra los índices UNIQUE de `usuarios`) se traduce a `DomainException` para que salga
+   como toast y no como pantalla blanca.
+7. Los modales cierran con Esc vía Alpine: `@keydown.escape="$wire.cerrarModales()"` en
+   Config y `"$wire.cerrarForm(); $wire.porEliminar = null"` en Empleados. El método
+   Livewire **necesita el prefijo `$wire.`**: sin él Alpine lo trata como función JS, tira
+   `is not defined` y Esc no hace nada (era el bug). Al ser expresión de Alpine sí admite
+   varias sentencias con `;` (a diferencia de `wire:click`, que solo ejecuta la primera).
 
 ### Migraciones de dominio autorizadas (son 2, ninguna más sin preguntar)
 1. `database/migrations/2026_09_28_000001_create_devoluciones_tables.php` crea
@@ -576,15 +625,41 @@ Ojo: el helper solo es seguro si su llamada está dentro de algo que lo atrape:
 ### Pruebas: suite VERDE contra una copia real del schema (2026-09-29)
 - `phpunit.xml` apunta a `DB_CONNECTION=mysql` y **`DB_DATABASE=luxury_test`**.
   `luxury_test` ya NO es una base vacia: es **copia completa del schema legacy**
-  (26 tablas, generada desde `luxury.sql` con `USE` reescrito) + la columna
-  `productos.imagen`. Ver counts: 542 ventas, 106 productos, 3 usuarios.
+  (28 tablas, generada desde `luxury.sql` con `USE` reescrito) + las 2
+  migraciones de dominio autorizadas. Ver counts: 542 ventas, 106 productos,
+  3 usuarios.
 - La suite usa `DatabaseTransactions` (NUNCA `RefreshDatabase`: dropea el schema
-  legacy). Estado actual: **60 passed, 1 skipped** (no hay productos sin categoria
+  legacy). Estado actual: **87 passed, 1 skipped** (no hay productos sin categoria
   en el dataset), ~2 s. Tras correrla, `luxury` y `luxury_test` quedan identicas.
-- Recrear `luxury_test` si se pierde: (1) `mysql -u root <
-  storage/testschema/luxury_test.sql` (el archivo tiene `USE luxury_test`, jamas
-  toca `luxury`; esta en .gitignore porque son datos reales) y (2)
-  `ALTER TABLE luxury_test.productos ADD COLUMN imagen MEDIUMBLOB NULL;`.
+- Recrear `luxury_test` si se pierde. El dump `storage/testschema/luxury_test.sql`
+  es ANTERIOR a las 2 migraciones autorizadas, así que por sí solo deja la base
+  desactualizada y la suite falla con "tabla no encontrada" (`devoluciones`):
+  1. `mysql -u root < storage/testschema/luxury_test.sql` (el archivo tiene
+     `USE luxury_test`, jamás toca `luxury`; está en .gitignore porque son datos
+     reales).
+  2. `ALTER TABLE luxury_test.productos ADD COLUMN imagen MEDIUMBLOB NULL;`
+     (migración `2026_09_28_000002`).
+  3. Correr la migración `2026_09_28_000001` (crea `devoluciones` +
+     `devolucion_detalles`).
+  4. Ampliar el enum de `usuarios.rol` a los 5 roles (ver "Roles y permisos").
+
+- **OJO: `DB::statement('USE luxury_test')` NO sirve para el `Schema` builder.**
+  Funciona para el SQL crudo (`DB::table()`, `DB::select()`), pero
+  `Schema::hasTable()` consulta `information_schema` con
+  `Connection::getDatabaseName()`, que quedó fijado en `luxury` al conectar: el
+  `USE` solo cambia la base de la sesión MySQL, no ese valor. El síntoma es
+  `Schema::hasTable('devoluciones')` devolviendo `true` sobre `luxury_test` y
+  haciendo que la migración "se lo salte" sin crearla — un falso verde. Para
+  correr migraciones contra `luxury_test` hay que registrar una conexión de
+  verdad:
+  ```php
+  config(['database.connections.mysql_test' => array_merge(
+      config('database.connections.mysql'), ['database' => 'luxury_test']
+  )]);
+  DB::setDefaultConnection('mysql_test');
+  ```
+  Por eso tampoco existe tabla `migrations` en `luxury_test`: `php artisan
+  migrate` no sirve para upkeep del schema de pruebas.
 - Tests de dominio nuevos: `tests/Feature/StockServiceTest.php` (incluye la
   regresion del findOrFail y la FK de categoria_id) y
   `tests/Feature/CajaServiceTest.php` (ventas, cambio, reversion atomica, cierre).

@@ -212,7 +212,10 @@ class Ventas extends PanelComponent
                 'metodosLabels' => $metodos->pluck('metodo')->all(),
                 'metodosTotales' => $metodos->pluck('t')->map(fn ($v) => (float) $v)->all(),
             ],
-            'esAdmin' => auth()->user()?->esAdmin() ?? false,
+            // Anular venta solo la pueden admin y supervisor (permiso `anular_venta`).
+            // Antes esta variable no la leía NINGUNA vista: el botón salía
+            // siempre y el método no chequeaba nada.
+            'puedeAnularVenta' => auth()->user()?->puedeAccion('anular_venta') ?? false,
         ];
 
         // Reconstruir gráficas en el navegador tras cada filtro/búsqueda/página.
@@ -252,24 +255,45 @@ class Ventas extends PanelComponent
         $this->showDetalle = true;
     }
 
-    public function pedirEliminarVenta(int $ventaId): void
-    {
-        $this->ventaAEliminar = $ventaId;
-        $this->showDetalle = false;
+    /**
+ * Anular una venta borra la venta, su movimiento de caja y repone stock: es la
+ * acción más destructiva del panel, así que NO basta con ocultar el botón.
+ *
+ * El chequeo va en el servidor y también en pedirEliminarVenta(), porque alguien
+ * con un snapshot viejo podría llamar al método directo saltándose la vista.
+ * El permiso es `anular_venta` de App\Support\Roles (admin y supervisor).
+ */
+public function pedirEliminarVenta(int $ventaId): void
+{
+    if (! auth()->user()?->puedeAccion('anular_venta')) {
+        $this->toast('No tienes permiso para anular ventas.', 'error');
+
+        return;
     }
 
-    public function eliminarVentaConfirmada(CajaService $service): void
-    {
-        if ($this->ventaAEliminar) {
-            try {
-                $service->eliminarVenta($this->ventaAEliminar);
-                $this->toast("Venta #{$this->ventaAEliminar} anulada y stock repuesto", 'ok');
-            } catch (\RuntimeException $e) {
-                $this->toast($e->getMessage(), 'error');
-            }
+    $this->ventaAEliminar = $ventaId;
+    $this->showDetalle = false;
+}
+
+public function eliminarVentaConfirmada(CajaService $service): void
+{
+    if ($this->ventaAEliminar) {
+        if (! auth()->user()?->puedeAccion('anular_venta')) {
+            $this->toast('No tienes permiso para anular ventas.', 'error');
+            $this->reset('ventaAEliminar', 'ventaDetalle', 'showDetalle');
+
+            return;
         }
-        $this->reset('ventaAEliminar', 'ventaDetalle', 'showDetalle');
+
+        try {
+            $service->eliminarVenta($this->ventaAEliminar);
+            $this->toast("Venta #{$this->ventaAEliminar} anulada y stock repuesto", 'ok');
+        } catch (\RuntimeException $e) {
+            $this->toast($e->getMessage(), 'error');
+        }
     }
+    $this->reset('ventaAEliminar', 'ventaDetalle', 'showDetalle');
+}
 
     public function closeDetalle(): void
     {
