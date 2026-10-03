@@ -24,6 +24,39 @@ un back-office local con datos reales, y con debug se depura más rápido. Ese e
 8. `composer audit` sigue reportando vulnerabilidades sin parche (Laravel 9 y PHP 8.0
    están EOL): aceptable solo en local, **no publicar así**.
 
+### Railway / Railpack (2026-10-03)
+
+El build en Railway usa **Railpack** (no Nixpacks). Tres cosas que ya nos costaron un
+build fallido y no hay que repetir:
+
+1. La versión de PHP la decide **solo `composer.json > require > php`**. Railpack le
+   hace `strings.CutPrefix($v, '^')` y usa el resto **literal**: `^8.0.2` → `8.0.2` →
+   busca `dunglas/frankenphp:php8.0.2-trixie`, que no existe → *"No version available
+   for php 8.0.2"*. Railpack solo soporta **PHP 8.2+**. Por eso `require.php` ahora es
+   `^8.2` (resuelve a `php8.2.34-trixie`, verificado en Docker Hub).
+   - **`RAILPACK_PHP_VERSION` NO existe** (Railway sugiere esa variable en el diagnóstico,
+     pero no está en el código de Railpack 0.40.1 ni en las docs). No perder tiempo con eso.
+   - `railpack.json > packages` **no overridea** `composer.json`: el propio Railpack lo
+     documenta como "seed" de menor prioridad. La fuente real es `composer.json`.
+2. Desplegar con `require.php ^8.2` rompe el **PHP 8.0.30 local** (XAMPP): `composer`
+   genera `vendor/composer/platform_check.php` que mataba `artisan` con fatal error.
+   Se resolvió en `composer.json` con `config.platform.php = "8.2.0"` (resuelve deps
+   como 8.2 en local) **y** `config.platform-check = false` (no genera el check que
+   reventaba en 8.0). Si algún día se actualiza el XAMPP a 8.2+, quitar las dos.
+3. `start-container.sh` de Railpack corre **`php artisan migrate --force` por defecto**,
+   y eso en este proyecto está prohibido (el schema legacy ya existe y las migraciones
+   de Laravel no son las de la BD real). Se bloqueó con `railpack.json` →
+   `deploy.variables.RAILPACK_SKIP_MIGRATIONS = "true"`. **No quitar.**
+
+Otras advertencias del despliegue en Railway que el build no cubre:
+- El build corre `php artisan config:cache`, que **hornea `APP_KEY` en el build**. Si
+  `APP_KEY` no está seteada antes de construir, el runtime muere con
+  `MissingAppKeyException`. Cargarla en las Variables del servicio.
+- La app **no funciona sin la BD legacy** (`productos`, `ventas`, etc.). Railway crea
+  MySQL vacío: hay que importar el dump o apuntar `DB_*` a un MySQL que ya tenga `luxury`.
+- Railpack corre en `APP_ENV=production`/`APP_DEBUG=false` en la imagen, pero `APP_URL`
+  y el resto de variables de producción siguen siendo responsabilidad de Railway.
+
 ## REGLA PRINCIPAL: todo es responsive, siempre
 
 **Cada componente, vista, tabla, formulario y sección debe funcionar en celular, tablet y escritorio.**
